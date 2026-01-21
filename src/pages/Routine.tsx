@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { CheckCircle2, Circle, Sun, Cloud, Moon, Plus, Flame } from "lucide-react";
+import { useState, useCallback } from "react";
+import { CheckCircle2, Circle, Sun, Cloud, Moon, Plus, Flame, Link2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { mockRoutineItems, mockGoals } from "@/data/mockData";
+import { mockRoutineItems } from "@/data/mockData";
+import { useGoals } from "@/contexts/GoalsContext";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const timeOfDayIcons = {
   morning: Sun,
@@ -16,12 +18,41 @@ const timeOfDayIcons = {
 const Routine = () => {
   const [completedItems, setCompletedItems] = useState<string[]>(['routine-1', 'routine-2']);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const { goals, updateGoalProgress, getProgressPerHabit, getGoalById } = useGoals();
 
-  const toggleItem = (id: string) => {
+  const toggleItem = useCallback((id: string, linkedGoalId?: string) => {
+    const isCompleting = !completedItems.includes(id);
+    
     setCompletedItems(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
-  };
+
+    // Update goal progress if habit is linked to a goal
+    if (linkedGoalId) {
+      const progressDelta = getProgressPerHabit(linkedGoalId);
+      const goal = getGoalById(linkedGoalId);
+      
+      if (isCompleting) {
+        updateGoalProgress(linkedGoalId, progressDelta);
+        if (goal) {
+          toast.success(`+${progressDelta.toFixed(1)}% progress on "${goal.title}"`, {
+            description: "Keep building momentum!",
+          });
+        }
+      } else {
+        updateGoalProgress(linkedGoalId, -progressDelta);
+        if (goal) {
+          toast.info(`Progress adjusted on "${goal.title}"`, {
+            description: "Habit unmarked",
+          });
+        }
+      }
+    } else if (isCompleting) {
+      toast.success("Habit completed!", {
+        description: "Great job keeping your streak!",
+      });
+    }
+  }, [completedItems, updateGoalProgress, getProgressPerHabit, getGoalById]);
 
   const filteredRoutines = selectedTime 
     ? mockRoutineItems.filter(r => r.timeOfDay === selectedTime)
@@ -31,7 +62,8 @@ const Routine = () => {
   const totalCount = mockRoutineItems.length;
   const completionPercent = Math.round((completedCount / totalCount) * 100);
 
-  const getGoalTitle = (id: string) => mockGoals.find(g => g.id === id)?.title;
+  const getGoalTitle = (id: string) => goals.find(g => g.id === id)?.title;
+  const getGoalProgress = (id: string) => goals.find(g => g.id === id)?.progress;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -103,6 +135,7 @@ const Routine = () => {
           const isCompleted = completedItems.includes(item.id);
           const TimeIcon = timeOfDayIcons[item.timeOfDay];
           const linkedGoal = item.linkedGoalId ? getGoalTitle(item.linkedGoalId) : null;
+          const linkedGoalProgress = item.linkedGoalId ? getGoalProgress(item.linkedGoalId) : null;
 
           return (
             <Card 
@@ -116,7 +149,7 @@ const Routine = () => {
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => toggleItem(item.id)}
+                    onClick={() => toggleItem(item.id, item.linkedGoalId)}
                     className={cn(
                       "flex-shrink-0 transition-transform hover:scale-110",
                       isCompleted ? "text-success" : "text-muted-foreground hover:text-primary"
@@ -138,8 +171,12 @@ const Routine = () => {
                         {item.title}
                       </span>
                       {linkedGoal && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs gap-1">
+                          <Link2 className="h-3 w-3" />
                           {linkedGoal}
+                          <span className="text-primary font-semibold ml-1">
+                            {linkedGoalProgress?.toFixed(0)}%
+                          </span>
                         </Badge>
                       )}
                     </div>

@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { mockGoals, mockLifeAreas } from "@/data/mockData";
-import { Goal, GoalStatus } from "@/types";
+import { mockLifeAreas, mockRoutineItems } from "@/data/mockData";
+import { useGoals } from "@/contexts/GoalsContext";
+import { GoalStatus } from "@/types";
 import { cn } from "@/lib/utils";
 
 const statusColors: Record<GoalStatus, string> = {
@@ -17,12 +18,16 @@ const statusColors: Record<GoalStatus, string> = {
 
 const Goals = () => {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const { goals } = useGoals();
 
   const filteredGoals = selectedArea 
-    ? mockGoals.filter(g => g.lifeAreaId === selectedArea)
-    : mockGoals;
+    ? goals.filter(g => g.lifeAreaId === selectedArea)
+    : goals;
 
   const getLifeArea = (id: string) => mockLifeAreas.find(area => area.id === id);
+  
+  const getLinkedHabitsCount = (goalId: string) => 
+    mockRoutineItems.filter(r => r.linkedGoalId === goalId).length;
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', { 
@@ -76,6 +81,8 @@ const Goals = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredGoals.map((goal) => {
           const area = getLifeArea(goal.lifeAreaId);
+          const linkedHabits = getLinkedHabitsCount(goal.id);
+          
           return (
             <Card key={goal.id} variant="interactive" className="group">
               <CardHeader className="pb-3">
@@ -103,7 +110,7 @@ const Goals = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium text-foreground">{goal.progress}%</span>
+                    <span className="font-medium text-foreground">{goal.progress.toFixed(1)}%</span>
                   </div>
                   <Progress 
                     value={goal.progress} 
@@ -114,7 +121,12 @@ const Goals = () => {
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
                   <span>Due: {formatDate(goal.timeBound)}</span>
-                  <span>{goal.milestones.filter(m => m.completed).length}/{goal.milestones.length} milestones</span>
+                  <div className="flex items-center gap-3">
+                    {linkedHabits > 0 && (
+                      <span className="text-primary">{linkedHabits} habits linked</span>
+                    )}
+                    <span>{goal.milestones.filter(m => m.completed).length}/{goal.milestones.length} milestones</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>

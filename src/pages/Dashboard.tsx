@@ -6,17 +6,23 @@ import { GoalsOverview } from "@/components/dashboard/GoalsOverview";
 import { FinanceSnapshot } from "@/components/dashboard/FinanceSnapshot";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useGoals } from "@/contexts/GoalsContext";
 import { 
   mockDashboardStats, 
-  mockGoals, 
   mockLifeAreas, 
   mockMVDItems,
   mockFinancialPlan 
 } from "@/data/mockData";
 
 const Dashboard = () => {
+  const { goals } = useGoals();
   const stats = mockDashboardStats;
   const completedMVDItems = ['mvd-1', 'mvd-2', 'mvd-4'];
+
+  // Calculate average progress from context goals
+  const averageProgress = goals.length > 0 
+    ? Math.round(goals.reduce((acc, g) => acc + g.progress, 0) / goals.length)
+    : 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -51,7 +57,7 @@ const Dashboard = () => {
         />
         <StatCard
           title="Goals Progress"
-          value={`${stats.goalsProgress}%`}
+          value={`${averageProgress}%`}
           subtitle="average completion"
           icon={TrendingUp}
           trend="up"
@@ -70,7 +76,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="flex justify-center py-4">
               <ProgressRing 
-                progress={stats.goalsProgress} 
+                progress={averageProgress} 
                 label="Complete"
                 sublabel="across all goals"
               />
@@ -86,7 +92,7 @@ const Dashboard = () => {
 
         {/* Center Column - Goals */}
         <div className="lg:col-span-1 space-y-6">
-          <GoalsOverview goals={mockGoals} lifeAreas={mockLifeAreas} />
+          <GoalsOverview goals={goals} lifeAreas={mockLifeAreas} />
           <RecentActivity />
         </div>
 
