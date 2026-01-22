@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { mockRoutineItems } from "@/data/mockData";
 import { useGoals } from "@/contexts/GoalsContext";
+import { useMVD } from "@/contexts/MVDContext";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -19,6 +20,7 @@ const Routine = () => {
   const [completedItems, setCompletedItems] = useState<string[]>(['routine-1', 'routine-2']);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const { goals, updateGoalProgress, getProgressPerHabit, getGoalById } = useGoals();
+  const { currentStreak } = useMVD();
 
   const toggleItem = useCallback((id: string, linkedGoalId?: string) => {
     const isCompleting = !completedItems.includes(id);
@@ -86,7 +88,7 @@ const Routine = () => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Flame className="h-5 w-5 text-warning" />
-                <span className="text-lg font-bold text-foreground">12 day streak</span>
+                <span className="text-lg font-bold text-foreground">{currentStreak} day streak</span>
               </div>
               <div className="h-4 w-px bg-border" />
               <span className="text-sm text-muted-foreground">

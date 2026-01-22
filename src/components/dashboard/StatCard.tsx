@@ -10,6 +10,7 @@ interface StatCardProps {
   trend?: "up" | "down" | "neutral";
   trendValue?: string;
   variant?: "default" | "glow" | "gradient";
+  className?: string;
 }
 
 export function StatCard({ 
@@ -19,10 +20,11 @@ export function StatCard({
   icon: Icon,
   trend,
   trendValue,
-  variant = "default"
+  variant = "default",
+  className
 }: StatCardProps) {
   return (
-    <Card variant={variant === "glow" ? "glow" : variant === "gradient" ? "elevated" : "default"} className="animate-fade-in">
+    <Card variant={variant === "glow" ? "glow" : variant === "gradient" ? "elevated" : "default"} className={cn("animate-fade-in", className)}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="space-y-2">
