@@ -1,4 +1,5 @@
-import { Target, Flame, Calendar, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Target, Flame, Calendar, TrendingUp, PartyPopper } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ProgressRing } from "@/components/dashboard/ProgressRing";
 import { MVDIndicator } from "@/components/dashboard/MVDIndicator";
@@ -7,25 +8,55 @@ import { FinanceSnapshot } from "@/components/dashboard/FinanceSnapshot";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGoals } from "@/contexts/GoalsContext";
+import { useMVD } from "@/contexts/MVDContext";
+import { cn } from "@/lib/utils";
 import { 
   mockDashboardStats, 
   mockLifeAreas, 
-  mockMVDItems,
   mockFinancialPlan 
 } from "@/data/mockData";
 
 const Dashboard = () => {
   const { goals } = useGoals();
+  const { items, completedItems, allCompleted, currentStreak, longestStreak } = useMVD();
   const stats = mockDashboardStats;
-  const completedMVDItems = ['mvd-1', 'mvd-2', 'mvd-4'];
+  const [showCelebration, setShowCelebration] = useState(false);
 
   // Calculate average progress from context goals
   const averageProgress = goals.length > 0 
     ? Math.round(goals.reduce((acc, g) => acc + g.progress, 0) / goals.length)
     : 0;
 
+  // Show celebration when MVD is completed
+  useEffect(() => {
+    if (allCompleted && completedItems.length > 0) {
+      setShowCelebration(true);
+      const timer = setTimeout(() => setShowCelebration(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [allCompleted, completedItems.length]);
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in relative">
+      {/* Celebration Overlay */}
+      {showCelebration && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+          <div className="animate-scale-in bg-success/20 backdrop-blur-sm rounded-2xl p-8 border border-success/30 shadow-2xl">
+            <div className="flex flex-col items-center gap-4">
+              <div className="h-16 w-16 rounded-full bg-success/20 flex items-center justify-center animate-pulse">
+                <PartyPopper className="h-8 w-8 text-success" />
+              </div>
+              <div className="text-center">
+                <h2 className="text-xl font-bold text-success">MVD Completed!</h2>
+                <p className="text-sm text-success/80 mt-1">
+                  Streak: {currentStreak} days 🔥
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-foreground">Good morning!</h1>
@@ -43,11 +74,12 @@ const Dashboard = () => {
         />
         <StatCard
           title="Current Streak"
-          value={`${stats.currentStreak} days`}
-          subtitle={`Longest: ${stats.longestStreak} days`}
+          value={`${currentStreak} days`}
+          subtitle={`Longest: ${longestStreak} days`}
           icon={Flame}
-          trend="up"
-          trendValue="+3"
+          trend={currentStreak > 0 ? "up" : undefined}
+          trendValue={currentStreak > 0 ? `+${currentStreak}` : undefined}
+          className={cn(allCompleted && "ring-2 ring-success/50")}
         />
         <StatCard
           title="Weekly Reviews"
@@ -85,8 +117,8 @@ const Dashboard = () => {
 
           {/* MVD Indicator */}
           <MVDIndicator 
-            items={mockMVDItems} 
-            completedItems={completedMVDItems}
+            items={items} 
+            completedItems={completedItems}
           />
         </div>
 

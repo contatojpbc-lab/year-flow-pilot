@@ -1,21 +1,47 @@
-import { useState } from "react";
-import { CheckCircle2, Circle, Plus, GripVertical, Settings2 } from "lucide-react";
+import { CheckCircle2, Circle, Plus, GripVertical, Settings2, Flame } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { mockMVDItems } from "@/data/mockData";
+import { useMVD } from "@/contexts/MVDContext";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { useEffect, useRef } from "react";
 
 const MVD = () => {
-  const [completedItems, setCompletedItems] = useState<string[]>(['mvd-1', 'mvd-2', 'mvd-4']);
+  const { 
+    items, 
+    completedItems, 
+    toggleItem, 
+    allCompleted, 
+    completedCount, 
+    currentStreak, 
+    longestStreak 
+  } = useMVD();
+  
+  const previousAllCompleted = useRef(allCompleted);
 
-  const toggleItem = (id: string) => {
-    setCompletedItems(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+  // Show toast when MVD is fully completed
+  useEffect(() => {
+    if (allCompleted && !previousAllCompleted.current && completedItems.length > 0) {
+      toast.success("🎉 MVD Complete!", {
+        description: `You're on a ${currentStreak} day streak!`,
+      });
+    }
+    previousAllCompleted.current = allCompleted;
+  }, [allCompleted, currentStreak, completedItems.length]);
+
+  const handleToggle = (id: string) => {
+    const isCompleting = !completedItems.includes(id);
+    toggleItem(id);
+    
+    if (isCompleting) {
+      const remaining = items.length - completedCount - 1;
+      if (remaining > 0) {
+        toast.success("Item completed!", {
+          description: `${remaining} more to complete your MVD`,
+        });
+      }
+    }
   };
-
-  const allCompleted = mockMVDItems.every(item => completedItems.includes(item.id));
-  const completedCount = completedItems.length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -31,6 +57,30 @@ const MVD = () => {
         </Button>
       </div>
 
+      {/* Streak Card */}
+      <Card variant={currentStreak > 0 ? "glow" : "default"}>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <div className={cn(
+              "h-14 w-14 rounded-full flex items-center justify-center",
+              currentStreak > 0 
+                ? "bg-warning/20 text-warning" 
+                : "bg-secondary text-muted-foreground"
+            )}>
+              <Flame className="h-7 w-7" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">
+                {currentStreak} Day Streak
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Longest streak: {longestStreak} days
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Status Card */}
       <Card variant={allCompleted ? "glow" : "default"}>
         <CardContent className="p-6">
@@ -42,17 +92,17 @@ const MVD = () => {
               <p className="text-muted-foreground">
                 {allCompleted 
                   ? "Amazing! You've completed your Minimum Viable Day! 🎉" 
-                  : `${mockMVDItems.length - completedCount} more to complete your MVD`
+                  : `${items.length - completedCount} more to complete your MVD`
                 }
               </p>
             </div>
             <div className={cn(
-              "h-16 w-16 rounded-full flex items-center justify-center text-2xl font-bold",
+              "h-16 w-16 rounded-full flex items-center justify-center text-2xl font-bold transition-all duration-300",
               allCompleted 
-                ? "gradient-primary text-primary-foreground shadow-glow" 
+                ? "gradient-primary text-primary-foreground shadow-glow animate-pulse" 
                 : "bg-secondary text-muted-foreground"
             )}>
-              {completedCount}/{mockMVDItems.length}
+              {completedCount}/{items.length}
             </div>
           </div>
         </CardContent>
@@ -68,7 +118,7 @@ const MVD = () => {
           </Button>
         </div>
 
-        {mockMVDItems.map((item, index) => {
+        {items.map((item, index) => {
           const isCompleted = completedItems.includes(item.id);
           
           return (
@@ -91,7 +141,7 @@ const MVD = () => {
                   </div>
 
                   <button
-                    onClick={() => toggleItem(item.id)}
+                    onClick={() => handleToggle(item.id)}
                     className={cn(
                       "flex-shrink-0 transition-transform hover:scale-110",
                       isCompleted ? "text-success" : "text-muted-foreground hover:text-primary"
