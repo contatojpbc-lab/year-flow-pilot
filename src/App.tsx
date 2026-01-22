@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { GoalsProvider } from "@/contexts/GoalsContext";
 import { MVDProvider } from "@/contexts/MVDContext";
+import { WeeklyReviewProvider } from "@/contexts/WeeklyReviewContext";
 import Dashboard from "./pages/Dashboard";
 import Goals from "./pages/Goals";
 import Routine from "./pages/Routine";
@@ -23,26 +24,28 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <GoalsProvider>
       <MVDProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppLayout>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/goals" element={<Goals />} />
-                <Route path="/routine" element={<Routine />} />
-                <Route path="/review" element={<WeeklyReview />} />
-                <Route path="/mvd" element={<MVD />} />
-                <Route path="/finances" element={<Finances />} />
-                <Route path="/journal" element={<Journal />} />
-                <Route path="/reminders" element={<Reminders />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AppLayout>
-          </BrowserRouter>
-        </TooltipProvider>
+        <WeeklyReviewProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppLayout>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/goals" element={<Goals />} />
+                  <Route path="/routine" element={<Routine />} />
+                  <Route path="/review" element={<WeeklyReview />} />
+                  <Route path="/mvd" element={<MVD />} />
+                  <Route path="/finances" element={<Finances />} />
+                  <Route path="/journal" element={<Journal />} />
+                  <Route path="/reminders" element={<Reminders />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AppLayout>
+            </BrowserRouter>
+          </TooltipProvider>
+        </WeeklyReviewProvider>
       </MVDProvider>
     </GoalsProvider>
   </QueryClientProvider>
