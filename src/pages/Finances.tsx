@@ -1,19 +1,56 @@
 import { useState } from "react";
-import { Plus, Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Plus, Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Pencil, Trash2, X, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { mockFinancialPlan, mockTransactions } from "@/data/mockData";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { useFinances } from "@/contexts/FinancesContext";
 import { cn } from "@/lib/utils";
 
 const Finances = () => {
-  const plan = mockFinancialPlan;
-  const transactions = mockTransactions;
+  const {
+    plan,
+    transactions,
+    totalPlanned,
+    totalActual,
+    remaining,
+    savingsRate,
+    addTransaction,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    deleteTransaction,
+    updatePlannedIncome,
+    updateActualIncome,
+  } = useFinances();
 
-  const totalPlanned = plan.categories.reduce((sum, cat) => sum + cat.plannedAmount, 0);
-  const totalActual = plan.categories.reduce((sum, cat) => sum + cat.actualAmount, 0);
-  const remaining = totalPlanned - totalActual;
-  const savingsRate = Math.round((plan.categories.find(c => c.name === 'Savings')?.actualAmount || 0) / plan.actualIncome * 100);
+  // Transaction form state
+  const [txDialogOpen, setTxDialogOpen] = useState(false);
+  const [txForm, setTxForm] = useState({
+    amount: '',
+    type: 'expense' as 'income' | 'expense',
+    categoryId: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+  });
+
+  // Category form state
+  const [catDialogOpen, setCatDialogOpen] = useState(false);
+  const [catForm, setCatForm] = useState({
+    name: '',
+    plannedAmount: '',
+    color: 'hsl(217 91% 60%)',
+  });
+
+  // Income editing state
+  const [editingIncome, setEditingIncome] = useState(false);
+  const [incomeForm, setIncomeForm] = useState({
+    planned: plan.plannedIncome.toString(),
+    actual: plan.actualIncome.toString(),
+  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -23,12 +60,71 @@ const Finances = () => {
     }).format(amount);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
     return new Intl.DateTimeFormat('en-US', { 
       month: 'short', 
       day: 'numeric' 
     }).format(new Date(date));
   };
+
+  // Handle add transaction
+  const handleAddTransaction = () => {
+    if (!txForm.amount || !txForm.description) return;
+    
+    addTransaction({
+      amount: parseFloat(txForm.amount),
+      type: txForm.type,
+      categoryId: txForm.type === 'expense' ? txForm.categoryId || undefined : undefined,
+      description: txForm.description,
+      date: new Date(txForm.date),
+      isRecurring: false,
+    });
+
+    setTxForm({
+      amount: '',
+      type: 'expense',
+      categoryId: '',
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+    });
+    setTxDialogOpen(false);
+  };
+
+  // Handle add category
+  const handleAddCategory = () => {
+    if (!catForm.name || !catForm.plannedAmount) return;
+    
+    addCategory({
+      name: catForm.name,
+      plannedAmount: parseFloat(catForm.plannedAmount),
+      color: catForm.color,
+    });
+
+    setCatForm({
+      name: '',
+      plannedAmount: '',
+      color: 'hsl(217 91% 60%)',
+    });
+    setCatDialogOpen(false);
+  };
+
+  // Handle save income
+  const handleSaveIncome = () => {
+    const planned = parseFloat(incomeForm.planned);
+    const actual = parseFloat(incomeForm.actual);
+    if (!isNaN(planned)) updatePlannedIncome(planned);
+    if (!isNaN(actual)) updateActualIncome(actual);
+    setEditingIncome(false);
+  };
+
+  const colorOptions = [
+    { value: 'hsl(217 91% 60%)', label: 'Blue' },
+    { value: 'hsl(38 92% 50%)', label: 'Orange' },
+    { value: 'hsl(160 84% 45%)', label: 'Green' },
+    { value: 'hsl(280 67% 55%)', label: 'Purple' },
+    { value: 'hsl(340 82% 52%)', label: 'Pink' },
+    { value: 'hsl(0 72% 51%)', label: 'Red' },
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -38,24 +134,206 @@ const Finances = () => {
           <h1 className="text-2xl font-bold text-foreground">Finances</h1>
           <p className="text-muted-foreground">January 2026 overview</p>
         </div>
-        <Button variant="glow">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Transaction
-        </Button>
+        <div className="flex gap-2">
+          {/* Add Category Dialog */}
+          <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Category
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Category</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Category Name</Label>
+                  <Input
+                    placeholder="e.g., Groceries"
+                    value={catForm.name}
+                    onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Planned Budget</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={catForm.plannedAmount}
+                    onChange={(e) => setCatForm({ ...catForm, plannedAmount: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Color</Label>
+                  <Select value={catForm.color} onValueChange={(v) => setCatForm({ ...catForm, color: v })}>
+                    <SelectTrigger>
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 rounded-full" style={{ backgroundColor: catForm.color }} />
+                        <SelectValue />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {colorOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <div className="flex items-center gap-2">
+                            <div className="h-4 w-4 rounded-full" style={{ backgroundColor: opt.value }} />
+                            {opt.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button onClick={handleAddCategory}>Add Category</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Transaction Dialog */}
+          <Dialog open={txDialogOpen} onOpenChange={setTxDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="glow">
+                <Plus className="h-4 w-4 mr-2" />
+                Transaction
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Transaction</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Select value={txForm.type} onValueChange={(v: 'income' | 'expense') => setTxForm({ ...txForm, type: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="expense">Expense</SelectItem>
+                      <SelectItem value="income">Income</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Amount</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={txForm.amount}
+                    onChange={(e) => setTxForm({ ...txForm, amount: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Input
+                    placeholder="e.g., Grocery shopping"
+                    value={txForm.description}
+                    onChange={(e) => setTxForm({ ...txForm, description: e.target.value })}
+                  />
+                </div>
+                {txForm.type === 'expense' && (
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select value={txForm.categoryId} onValueChange={(v) => setTxForm({ ...txForm, categoryId: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {plan.categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            <div className="flex items-center gap-2">
+                              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: cat.color }} />
+                              {cat.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Input
+                    type="date"
+                    value={txForm.date}
+                    onChange={(e) => setTxForm({ ...txForm, date: e.target.value })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button onClick={handleAddTransaction}>Add Transaction</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Overview Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card variant="glow">
+        <Card variant="glow" className="relative">
           <CardContent className="p-5">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <TrendingUp className="h-4 w-4" />
-              <span className="text-sm">Income</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <TrendingUp className="h-4 w-4" />
+                <span className="text-sm">Income</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => {
+                  setIncomeForm({
+                    planned: plan.plannedIncome.toString(),
+                    actual: plan.actualIncome.toString(),
+                  });
+                  setEditingIncome(!editingIncome);
+                }}
+              >
+                {editingIncome ? <X className="h-3 w-3" /> : <Pencil className="h-3 w-3" />}
+              </Button>
             </div>
-            <p className="text-2xl font-bold text-foreground">{formatCurrency(plan.actualIncome)}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              of {formatCurrency(plan.plannedIncome)} planned
-            </p>
+            {editingIncome ? (
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-xs">Actual</Label>
+                  <Input
+                    type="number"
+                    value={incomeForm.actual}
+                    onChange={(e) => setIncomeForm({ ...incomeForm, actual: e.target.value })}
+                    className="h-8"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Planned</Label>
+                  <Input
+                    type="number"
+                    value={incomeForm.planned}
+                    onChange={(e) => setIncomeForm({ ...incomeForm, planned: e.target.value })}
+                    className="h-8"
+                  />
+                </div>
+                <Button size="sm" onClick={handleSaveIncome} className="w-full">
+                  <Check className="h-3 w-3 mr-1" /> Save
+                </Button>
+              </div>
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-foreground">{formatCurrency(plan.actualIncome)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  of {formatCurrency(plan.plannedIncome)} planned
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -106,40 +384,58 @@ const Finances = () => {
             <CardTitle className="text-base font-semibold">Budget Categories</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {plan.categories.map((category) => {
-              const percent = Math.round((category.actualAmount / category.plannedAmount) * 100);
-              const isOver = category.actualAmount > category.plannedAmount;
-              
-              return (
-                <div key={category.id} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      <span className="text-sm font-medium text-foreground">{category.name}</span>
+            {plan.categories.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No categories yet. Add one to start tracking!
+              </p>
+            ) : (
+              plan.categories.map((category) => {
+                const percent = category.plannedAmount > 0 
+                  ? Math.round((category.actualAmount / category.plannedAmount) * 100) 
+                  : 0;
+                const isOver = category.actualAmount > category.plannedAmount;
+                
+                return (
+                  <div key={category.id} className="space-y-2 group">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <span className="text-sm font-medium text-foreground">{category.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <span className={cn(
+                            "text-sm font-medium",
+                            isOver ? "text-destructive" : "text-foreground"
+                          )}>
+                            {formatCurrency(category.actualAmount)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {' '}/ {formatCurrency(category.plannedAmount)}
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => deleteCategory(category.id)}
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className={cn(
-                        "text-sm font-medium",
-                        isOver ? "text-destructive" : "text-foreground"
-                      )}>
-                        {formatCurrency(category.actualAmount)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {' '}/ {formatCurrency(category.plannedAmount)}
-                      </span>
-                    </div>
+                    <Progress 
+                      value={Math.min(percent, 100)} 
+                      size="sm"
+                      indicatorColor={isOver ? "destructive" : percent > 80 ? "warning" : "default"}
+                    />
                   </div>
-                  <Progress 
-                    value={Math.min(percent, 100)} 
-                    size="sm"
-                    indicatorColor={isOver ? "destructive" : percent > 80 ? "warning" : "default"}
-                  />
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </CardContent>
         </Card>
 
@@ -149,42 +445,58 @@ const Finances = () => {
             <CardTitle className="text-base font-semibold">Recent Transactions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {transactions.map((tx) => {
-              const category = plan.categories.find(c => c.id === tx.categoryId);
-              const isIncome = tx.type === 'income';
+            {transactions.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No transactions yet. Add one to start tracking!
+              </p>
+            ) : (
+              transactions.slice(0, 8).map((tx) => {
+                const category = plan.categories.find(c => c.id === tx.categoryId);
+                const isIncome = tx.type === 'income';
 
-              return (
-                <div 
-                  key={tx.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-secondary/30"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "h-8 w-8 rounded-full flex items-center justify-center",
-                      isIncome ? "bg-success/20" : "bg-secondary"
-                    )}>
-                      {isIncome ? (
-                        <ArrowDownRight className="h-4 w-4 text-success" />
-                      ) : (
-                        <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-                      )}
+                return (
+                  <div 
+                    key={tx.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "h-8 w-8 rounded-full flex items-center justify-center",
+                        isIncome ? "bg-success/20" : "bg-secondary"
+                      )}>
+                        {isIncome ? (
+                          <ArrowDownRight className="h-4 w-4 text-success" />
+                        ) : (
+                          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{tx.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(tx.date)} {category && `• ${category.name}`}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{tx.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(tx.date)} {category && `• ${category.name}`}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "text-sm font-medium",
+                        isIncome ? "text-success" : "text-foreground"
+                      )}>
+                        {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => deleteTransaction(tx.id)}
+                      >
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
                     </div>
                   </div>
-                  <span className={cn(
-                    "text-sm font-medium",
-                    isIncome ? "text-success" : "text-foreground"
-                  )}>
-                    {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
-                  </span>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </CardContent>
         </Card>
       </div>
