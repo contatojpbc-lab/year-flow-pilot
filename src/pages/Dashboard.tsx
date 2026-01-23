@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Target, Flame, Calendar, TrendingUp, PartyPopper } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { Target, Flame, Calendar, TrendingUp, PartyPopper, AlertCircle } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ProgressRing } from "@/components/dashboard/ProgressRing";
 import { MVDIndicator } from "@/components/dashboard/MVDIndicator";
@@ -7,6 +7,7 @@ import { GoalsOverview } from "@/components/dashboard/GoalsOverview";
 import { FinanceSnapshot } from "@/components/dashboard/FinanceSnapshot";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGoals } from "@/contexts/GoalsContext";
 import { useMVD } from "@/contexts/MVDContext";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,14 @@ const Dashboard = () => {
   const averageProgress = goals.length > 0 
     ? Math.round(goals.reduce((acc, g) => acc + g.progress, 0) / goals.length)
     : 0;
+
+  // Detect stagnant goals (progress < 10% or goals that haven't moved)
+  const stagnantGoals = useMemo(() => {
+    return goals.filter(goal => goal.progress < 10);
+  }, [goals]);
+
+  // Check if MVD hasn't been started today
+  const mvdNotStarted = completedItems.length === 0 && items.length > 0;
 
   // Show celebration when MVD is completed
   useEffect(() => {
@@ -54,6 +63,31 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Subtle Alerts Section */}
+      {(stagnantGoals.length > 0 || mvdNotStarted) && (
+        <div className="space-y-2">
+          {mvdNotStarted && (
+            <Alert className="border-warning/30 bg-warning/5">
+              <AlertCircle className="h-4 w-4 text-warning" />
+              <AlertDescription className="text-sm text-warning">
+                Seu MVD ainda não foi iniciado hoje. Comece com o primeiro item!
+              </AlertDescription>
+            </Alert>
+          )}
+          {stagnantGoals.length > 0 && (
+            <Alert className="border-muted-foreground/30 bg-muted/30">
+              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              <AlertDescription className="text-sm text-muted-foreground">
+                {stagnantGoals.length === 1 
+                  ? `A meta "${stagnantGoals[0].title}" precisa de atenção (${stagnantGoals[0].progress}% de progresso).`
+                  : `${stagnantGoals.length} metas precisam de atenção (menos de 10% de progresso).`
+                }
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       )}
 
