@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { FinancialPlan, ExpenseCategory, Transaction } from '@/types';
+import { FinancialPlan, ExpenseCategory, Transaction, FinancialGoal } from '@/types';
 import { mockFinancialPlan, mockTransactions } from '@/data/mockData';
 
 /**
@@ -13,19 +13,34 @@ import { mockFinancialPlan, mockTransactions } from '@/data/mockData';
  * 3. User records daily expenses (Gasto)
  * 4. Each expense automatically impacts category's actualAmount
  * 5. System shows planned vs actual comparison
+ * 6. Automatic insights generated based on spending patterns
  * 
  * ENTITIES MANAGED:
  * - RendaMensal: plannedIncome / actualIncome in FinancialPlan
  * - CategoriaGasto: ExpenseCategory[]
  * - Gasto: Transaction[]
- * - MetaFinanceira: (future implementation)
+ * - MetaFinanceira: FinancialGoal[]
  * - Investimento: (future implementation)
  */
+
+export interface CategoryInsight {
+  categoryId: string;
+  categoryName: string;
+  percentOverBudget: number;
+  isCritical: boolean;
+  message: string;
+}
+
+export interface FinanceInsight {
+  type: 'warning' | 'success' | 'info';
+  message: string;
+}
 
 interface FinancesContextType {
   // State
   plan: FinancialPlan;
   transactions: Transaction[];
+  financialGoals: FinancialGoal[];
   
   // Income operations
   updatePlannedIncome: (amount: number) => void;
@@ -41,12 +56,22 @@ interface FinancesContextType {
   updateTransaction: (transactionId: string, updates: Partial<Transaction>) => void;
   deleteTransaction: (transactionId: string) => void;
   
+  // Financial goals operations
+  addFinancialGoal: (goal: Omit<FinancialGoal, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt'>) => void;
+  updateFinancialGoal: (goalId: string, updates: Partial<FinancialGoal>) => void;
+  deleteFinancialGoal: (goalId: string) => void;
+  
   // Computed values
   totalPlanned: number;
   totalActual: number;
   remaining: number;
+  availableBalance: number;
   savingsRate: number;
   budgetUsedPercent: number;
+  
+  // Insights
+  criticalCategories: CategoryInsight[];
+  insights: FinanceInsight[];
 }
 
 const FinancesContext = createContext<FinancesContextType | null>(null);
@@ -67,6 +92,11 @@ export function FinancesProvider({ children }: { children: React.ReactNode }) {
     return stored ? JSON.parse(stored) : mockTransactions;
   });
 
+  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>(() => {
+    const stored = localStorage.getItem('finances-goals');
+    return stored ? JSON.parse(stored) : [];
+  });
+
   // Persist to localStorage
   const persistPlan = useCallback((newPlan: FinancialPlan) => {
     setPlan(newPlan);
@@ -76,6 +106,11 @@ export function FinancesProvider({ children }: { children: React.ReactNode }) {
   const persistTransactions = useCallback((newTransactions: Transaction[]) => {
     setTransactions(newTransactions);
     localStorage.setItem('finances-transactions', JSON.stringify(newTransactions));
+  }, []);
+
+  const persistFinancialGoals = useCallback((newGoals: FinancialGoal[]) => {
+    setFinancialGoals(newGoals);
+    localStorage.setItem('finances-goals', JSON.stringify(newGoals));
   }, []);
 
   // ============================================
@@ -261,6 +296,33 @@ export function FinancesProvider({ children }: { children: React.ReactNode }) {
   }, [transactions, plan, persistTransactions, persistPlan, now]);
 
   // ============================================
+  // FINANCIAL GOALS OPERATIONS
+  // ============================================
+
+  const addFinancialGoal = useCallback((goalData: Omit<FinancialGoal, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt'>) => {
+    const newGoal: FinancialGoal = {
+      ...goalData,
+      id: `goal-${Date.now()}`,
+      userId,
+      year,
+      createdAt: now,
+      updatedAt: now,
+    };
+    persistFinancialGoals([...financialGoals, newGoal]);
+  }, [financialGoals, persistFinancialGoals, now, userId, year]);
+
+  const updateFinancialGoal = useCallback((goalId: string, updates: Partial<FinancialGoal>) => {
+    const updated = financialGoals.map(goal =>
+      goal.id === goalId ? { ...goal, ...updates, updatedAt: now } : goal
+    );
+    persistFinancialGoals(updated);
+  }, [financialGoals, persistFinancialGoals, now]);
+
+  const deleteFinancialGoal = useCallback((goalId: string) => {
+    persistFinancialGoals(financialGoals.filter(goal => goal.id !== goalId));
+  }, [financialGoals, persistFinancialGoals]);
+
+  // ============================================
   // COMPUTED VALUES
   // ============================================
 
@@ -279,6 +341,12 @@ export function FinancesProvider({ children }: { children: React.ReactNode }) {
     [totalPlanned, totalActual]
   );
 
+  // Available balance = actual income - actual expenses
+  const availableBalance = useMemo(() => 
+    plan.actualIncome - totalActual,
+    [plan.actualIncome, totalActual]
+  );
+
   const savingsRate = useMemo(() => {
     const savingsCategory = plan.categories.find(c => c.name === 'Savings');
     if (!savingsCategory || plan.actualIncome === 0) return 0;
@@ -290,9 +358,103 @@ export function FinancesProvider({ children }: { children: React.ReactNode }) {
     return Math.round((totalActual / totalPlanned) * 100);
   }, [totalPlanned, totalActual]);
 
+  // ============================================
+  // INSIGHTS & ALERTS
+  // ============================================
+
+  // Critical categories: over 90% of budget or already exceeded
+  const criticalCategories = useMemo<CategoryInsight[]>(() => {
+    return plan.categories
+      .map(cat => {
+        if (cat.plannedAmount === 0) return null;
+        const percentUsed = (cat.actualAmount / cat.plannedAmount) * 100;
+        const percentOver = percentUsed - 100;
+        
+        if (percentUsed >= 90) {
+          return {
+            categoryId: cat.id,
+            categoryName: cat.name,
+            percentOverBudget: Math.max(0, percentOver),
+            isCritical: percentUsed > 100,
+            message: percentUsed > 100 
+              ? `${cat.name} exceeded budget by ${Math.round(percentOver)}%`
+              : `${cat.name} is at ${Math.round(percentUsed)}% of budget`,
+          };
+        }
+        return null;
+      })
+      .filter((item): item is CategoryInsight => item !== null);
+  }, [plan.categories]);
+
+  // Generate automatic insights
+  const insights = useMemo<FinanceInsight[]>(() => {
+    const result: FinanceInsight[] = [];
+    
+    // Check for over-budget categories
+    plan.categories.forEach(cat => {
+      if (cat.plannedAmount > 0 && cat.actualAmount > cat.plannedAmount) {
+        const percentOver = Math.round(((cat.actualAmount - cat.plannedAmount) / cat.plannedAmount) * 100);
+        result.push({
+          type: 'warning',
+          message: `You spent ${percentOver}% more on ${cat.name} this month`,
+        });
+      }
+    });
+
+    // Check for under-budget categories (positive feedback)
+    const underBudgetCategories = plan.categories.filter(cat => 
+      cat.plannedAmount > 0 && cat.actualAmount < cat.plannedAmount * 0.7 && cat.actualAmount > 0
+    );
+    if (underBudgetCategories.length > 0) {
+      const cat = underBudgetCategories[0];
+      const percentSaved = Math.round(((cat.plannedAmount - cat.actualAmount) / cat.plannedAmount) * 100);
+      result.push({
+        type: 'success',
+        message: `Great job! ${cat.name} is ${percentSaved}% under budget`,
+      });
+    }
+
+    // Overall budget health
+    if (budgetUsedPercent > 100) {
+      result.push({
+        type: 'warning',
+        message: `Total spending exceeded budget by ${budgetUsedPercent - 100}%`,
+      });
+    } else if (budgetUsedPercent >= 90) {
+      result.push({
+        type: 'info',
+        message: `You've used ${budgetUsedPercent}% of your total budget`,
+      });
+    }
+
+    // Savings rate insight
+    if (savingsRate > 20) {
+      result.push({
+        type: 'success',
+        message: `Excellent! You're saving ${savingsRate}% of your income`,
+      });
+    } else if (savingsRate < 10 && plan.actualIncome > 0) {
+      result.push({
+        type: 'info',
+        message: `Consider increasing savings (currently ${savingsRate}%)`,
+      });
+    }
+
+    // Available balance insight
+    if (availableBalance < 0) {
+      result.push({
+        type: 'warning',
+        message: `You're overspending! ${Math.abs(availableBalance).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })} over income`,
+      });
+    }
+
+    return result;
+  }, [plan.categories, budgetUsedPercent, savingsRate, availableBalance, plan.actualIncome]);
+
   const value: FinancesContextType = {
     plan,
     transactions,
+    financialGoals,
     updatePlannedIncome,
     updateActualIncome,
     addCategory,
@@ -301,11 +463,17 @@ export function FinancesProvider({ children }: { children: React.ReactNode }) {
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    addFinancialGoal,
+    updateFinancialGoal,
+    deleteFinancialGoal,
     totalPlanned,
     totalActual,
     remaining,
+    availableBalance,
     savingsRate,
     budgetUsedPercent,
+    criticalCategories,
+    insights,
   };
 
   return (

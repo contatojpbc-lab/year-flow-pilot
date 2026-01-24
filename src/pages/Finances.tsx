@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Pencil, Trash2, X, Check } from "lucide-react";
+import { Plus, Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Pencil, Trash2, X, Check, AlertTriangle, Lightbulb, DollarSign, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useFinances } from "@/contexts/FinancesContext";
 import { cn } from "@/lib/utils";
 
@@ -14,10 +15,14 @@ const Finances = () => {
   const {
     plan,
     transactions,
+    financialGoals,
     totalPlanned,
     totalActual,
     remaining,
+    availableBalance,
     savingsRate,
+    criticalCategories,
+    insights,
     addTransaction,
     updateTransaction,
     addCategory,
@@ -26,6 +31,9 @@ const Finances = () => {
     deleteTransaction,
     updatePlannedIncome,
     updateActualIncome,
+    addFinancialGoal,
+    updateFinancialGoal,
+    deleteFinancialGoal,
   } = useFinances();
 
   // Transaction form state
@@ -161,6 +169,36 @@ const Finances = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Insights & Alerts */}
+      {(insights.length > 0 || criticalCategories.length > 0) && (
+        <div className="space-y-2">
+          {criticalCategories.map((cat) => (
+            <Alert key={cat.categoryId} variant={cat.isCritical ? "destructive" : "default"} className="py-2">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="ml-2">{cat.message}</AlertDescription>
+            </Alert>
+          ))}
+          {insights.slice(0, 3).map((insight, idx) => (
+            <Alert 
+              key={idx} 
+              variant={insight.type === 'warning' ? 'destructive' : 'default'}
+              className={cn(
+                "py-2",
+                insight.type === 'success' && "border-success/50 bg-success/5",
+                insight.type === 'info' && "border-primary/50 bg-primary/5"
+              )}
+            >
+              <Lightbulb className={cn(
+                "h-4 w-4",
+                insight.type === 'success' && "text-success",
+                insight.type === 'info' && "text-primary"
+              )} />
+              <AlertDescription className="ml-2">{insight.message}</AlertDescription>
+            </Alert>
+          ))}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
@@ -388,28 +426,34 @@ const Finances = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={cn(
+          availableBalance < 0 && "border-destructive/50"
+        )}>
           <CardContent className="p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <Wallet className="h-4 w-4" />
-              <span className="text-sm">Remaining</span>
+              <DollarSign className="h-4 w-4" />
+              <span className="text-sm">Available Balance</span>
             </div>
             <p className={cn(
               "text-2xl font-bold",
-              remaining >= 0 ? "text-success" : "text-destructive"
+              availableBalance >= 0 ? "text-success" : "text-destructive"
             )}>
-              {formatCurrency(remaining)}
+              {formatCurrency(availableBalance)}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">available this month</p>
+            <p className="text-xs text-muted-foreground mt-1">income minus expenses</p>
           </CardContent>
         </Card>
 
         <Card variant="elevated">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <Target className="h-4 w-4" />
               <span className="text-sm">Savings Rate</span>
             </div>
-            <p className="text-2xl font-bold text-primary">{savingsRate}%</p>
+            <p className={cn(
+              "text-2xl font-bold",
+              savingsRate >= 20 ? "text-success" : savingsRate >= 10 ? "text-primary" : "text-warning"
+            )}>{savingsRate}%</p>
             <p className="text-xs text-muted-foreground mt-1">of income saved</p>
           </CardContent>
         </Card>
@@ -553,6 +597,69 @@ const Finances = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Financial Goals Progress */}
+      {financialGoals.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Financial Goals</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {financialGoals.map((goal) => {
+              const progress = goal.targetAmount > 0 
+                ? Math.round((goal.currentAmount / goal.targetAmount) * 100) 
+                : 0;
+              const daysRemaining = Math.ceil((new Date(goal.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+              
+              return (
+                <div key={goal.id} className="space-y-2 group">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium text-foreground">{goal.title}</span>
+                      <span className={cn(
+                        "text-xs px-2 py-0.5 rounded-full",
+                        goal.type === 'savings' && "bg-success/20 text-success",
+                        goal.type === 'investment' && "bg-primary/20 text-primary",
+                        goal.type === 'debt_payoff' && "bg-warning/20 text-warning",
+                        goal.type === 'purchase' && "bg-secondary text-muted-foreground"
+                      )}>
+                        {goal.type.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <span className="text-sm font-medium text-foreground">
+                          {formatCurrency(goal.currentAmount)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {' '}/ {formatCurrency(goal.targetAmount)}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => deleteFinancialGoal(goal.id)}
+                      >
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                  <Progress 
+                    value={Math.min(progress, 100)} 
+                    size="sm"
+                    indicatorColor={progress >= 100 ? "success" : progress >= 50 ? "default" : "warning"}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {progress}% complete • {daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Deadline passed'}
+                  </p>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
