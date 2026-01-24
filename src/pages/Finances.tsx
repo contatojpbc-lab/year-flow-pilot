@@ -19,6 +19,7 @@ const Finances = () => {
     remaining,
     savingsRate,
     addTransaction,
+    updateTransaction,
     addCategory,
     updateCategory,
     deleteCategory,
@@ -29,6 +30,7 @@ const Finances = () => {
 
   // Transaction form state
   const [txDialogOpen, setTxDialogOpen] = useState(false);
+  const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
   const [txForm, setTxForm] = useState({
     amount: '',
     type: 'expense' as 'income' | 'expense',
@@ -52,6 +54,31 @@ const Finances = () => {
     actual: plan.actualIncome.toString(),
   });
 
+  // Reset transaction form
+  const resetTxForm = () => {
+    setTxForm({
+      amount: '',
+      type: 'expense',
+      categoryId: '',
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+    });
+    setEditingTransactionId(null);
+  };
+
+  // Open edit dialog for a transaction
+  const handleEditTransaction = (tx: typeof transactions[0]) => {
+    setEditingTransactionId(tx.id);
+    setTxForm({
+      amount: tx.amount.toString(),
+      type: tx.type,
+      categoryId: tx.categoryId || '',
+      description: tx.description,
+      date: new Date(tx.date).toISOString().split('T')[0],
+    });
+    setTxDialogOpen(true);
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -67,26 +94,32 @@ const Finances = () => {
     }).format(new Date(date));
   };
 
-  // Handle add transaction
-  const handleAddTransaction = () => {
+  // Handle add/update transaction
+  const handleSaveTransaction = () => {
     if (!txForm.amount || !txForm.description) return;
     
-    addTransaction({
-      amount: parseFloat(txForm.amount),
-      type: txForm.type,
-      categoryId: txForm.type === 'expense' ? txForm.categoryId || undefined : undefined,
-      description: txForm.description,
-      date: new Date(txForm.date),
-      isRecurring: false,
-    });
+    if (editingTransactionId) {
+      // Update existing transaction
+      updateTransaction(editingTransactionId, {
+        amount: parseFloat(txForm.amount),
+        type: txForm.type,
+        categoryId: txForm.type === 'expense' ? txForm.categoryId || undefined : undefined,
+        description: txForm.description,
+        date: new Date(txForm.date),
+      });
+    } else {
+      // Add new transaction
+      addTransaction({
+        amount: parseFloat(txForm.amount),
+        type: txForm.type,
+        categoryId: txForm.type === 'expense' ? txForm.categoryId || undefined : undefined,
+        description: txForm.description,
+        date: new Date(txForm.date),
+        isRecurring: false,
+      });
+    }
 
-    setTxForm({
-      amount: '',
-      type: 'expense',
-      categoryId: '',
-      description: '',
-      date: new Date().toISOString().split('T')[0],
-    });
+    resetTxForm();
     setTxDialogOpen(false);
   };
 
@@ -196,8 +229,11 @@ const Finances = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Add Transaction Dialog */}
-          <Dialog open={txDialogOpen} onOpenChange={setTxDialogOpen}>
+          {/* Add/Edit Transaction Dialog */}
+          <Dialog open={txDialogOpen} onOpenChange={(open) => {
+            setTxDialogOpen(open);
+            if (!open) resetTxForm();
+          }}>
             <DialogTrigger asChild>
               <Button variant="glow">
                 <Plus className="h-4 w-4 mr-2" />
@@ -206,7 +242,7 @@ const Finances = () => {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add Transaction</DialogTitle>
+                <DialogTitle>{editingTransactionId ? 'Edit Transaction' : 'Add Transaction'}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -271,7 +307,9 @@ const Finances = () => {
                 <DialogClose asChild>
                   <Button variant="outline">Cancel</Button>
                 </DialogClose>
-                <Button onClick={handleAddTransaction}>Add Transaction</Button>
+                <Button onClick={handleSaveTransaction}>
+                  {editingTransactionId ? 'Save Changes' : 'Add Transaction'}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -453,37 +491,52 @@ const Finances = () => {
               transactions.slice(0, 8).map((tx) => {
                 const category = plan.categories.find(c => c.id === tx.categoryId);
                 const isIncome = tx.type === 'income';
+                const isOverBudget = category && category.actualAmount > category.plannedAmount;
 
                 return (
                   <div 
                     key={tx.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 group"
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-lg group transition-colors",
+                      isOverBudget ? "bg-destructive/10 border border-destructive/20" : "bg-secondary/30"
+                    )}
                   >
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         "h-8 w-8 rounded-full flex items-center justify-center",
-                        isIncome ? "bg-success/20" : "bg-secondary"
+                        isIncome ? "bg-success/20" : isOverBudget ? "bg-destructive/20" : "bg-secondary"
                       )}>
                         {isIncome ? (
                           <ArrowDownRight className="h-4 w-4 text-success" />
                         ) : (
-                          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                          <ArrowUpRight className={cn("h-4 w-4", isOverBudget ? "text-destructive" : "text-muted-foreground")} />
                         )}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-foreground">{tx.description}</p>
                         <p className="text-xs text-muted-foreground">
                           {formatDate(tx.date)} {category && `• ${category.name}`}
+                          {isOverBudget && (
+                            <span className="ml-1 text-destructive font-medium">• Over budget</span>
+                          )}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={cn(
                         "text-sm font-medium",
-                        isIncome ? "text-success" : "text-foreground"
+                        isIncome ? "text-success" : isOverBudget ? "text-destructive" : "text-foreground"
                       )}>
                         {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
                       </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleEditTransaction(tx)}
+                      >
+                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
