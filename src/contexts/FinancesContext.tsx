@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { FinancialPlan, ExpenseCategory, Transaction, FinancialGoal } from '@/types';
+import { FinancialPlan, ExpenseCategory, Transaction, FinancialGoal, GoalContribution } from '@/types';
 import { mockFinancialPlan, mockTransactions } from '@/data/mockData';
 
 /**
@@ -57,9 +57,15 @@ interface FinancesContextType {
   deleteTransaction: (transactionId: string) => void;
   
   // Financial goals operations
-  addFinancialGoal: (goal: Omit<FinancialGoal, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt'>) => void;
+  addFinancialGoal: (goal: Omit<FinancialGoal, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt' | 'contributions'>) => void;
   updateFinancialGoal: (goalId: string, updates: Partial<FinancialGoal>) => void;
   deleteFinancialGoal: (goalId: string) => void;
+  addContribution: (goalId: string, amount: number, type?: GoalContribution['type'], notes?: string) => void;
+  simulateInvestmentReturn: (goalId: string) => void;
+  
+  // Computed goal values
+  totalMonthlyAllocated: number;
+  totalGoalProgress: number;
   
   // Computed values
   totalPlanned: number;
@@ -299,12 +305,13 @@ export function FinancesProvider({ children }: { children: React.ReactNode }) {
   // FINANCIAL GOALS OPERATIONS
   // ============================================
 
-  const addFinancialGoal = useCallback((goalData: Omit<FinancialGoal, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt'>) => {
+  const addFinancialGoal = useCallback((goalData: Omit<FinancialGoal, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt' | 'contributions'>) => {
     const newGoal: FinancialGoal = {
       ...goalData,
       id: `goal-${Date.now()}`,
       userId,
       year,
+      contributions: [],
       createdAt: now,
       updatedAt: now,
     };
@@ -321,6 +328,70 @@ export function FinancesProvider({ children }: { children: React.ReactNode }) {
   const deleteFinancialGoal = useCallback((goalId: string) => {
     persistFinancialGoals(financialGoals.filter(goal => goal.id !== goalId));
   }, [financialGoals, persistFinancialGoals]);
+
+  /**
+   * Add a contribution to a financial goal
+   * Updates the goal's currentAmount automatically
+   */
+  const addContribution = useCallback((goalId: string, amount: number, type: GoalContribution['type'] = 'manual', notes?: string) => {
+    const newContribution: GoalContribution = {
+      id: `contrib-${Date.now()}`,
+      userId,
+      year,
+      goalId,
+      amount,
+      date: now,
+      type,
+      notes,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const updated = financialGoals.map(goal => {
+      if (goal.id === goalId) {
+        return {
+          ...goal,
+          currentAmount: goal.currentAmount + amount,
+          contributions: [...goal.contributions, newContribution],
+          updatedAt: now,
+        };
+      }
+      return goal;
+    });
+    persistFinancialGoals(updated);
+  }, [financialGoals, persistFinancialGoals, now, userId, year]);
+
+  /**
+   * Simulate investment return based on expectedReturnRate
+   * Calculates monthly return (annual rate / 12)
+   */
+  const simulateInvestmentReturn = useCallback((goalId: string) => {
+    const goal = financialGoals.find(g => g.id === goalId);
+    if (!goal || goal.type !== 'investment' || !goal.expectedReturnRate) return;
+
+    // Monthly return = (current amount * annual rate) / 12
+    const monthlyReturn = (goal.currentAmount * goal.expectedReturnRate) / 12;
+    
+    if (monthlyReturn > 0) {
+      addContribution(goalId, monthlyReturn, 'investment_return', `Monthly return at ${(goal.expectedReturnRate * 100).toFixed(1)}% annual rate`);
+    }
+  }, [financialGoals, addContribution]);
+
+  // Total monthly amount allocated to all financial goals
+  const totalMonthlyAllocated = useMemo(() => 
+    financialGoals.reduce((sum, goal) => sum + (goal.monthlyContribution || 0), 0),
+    [financialGoals]
+  );
+
+  // Average progress across all financial goals
+  const totalGoalProgress = useMemo(() => {
+    if (financialGoals.length === 0) return 0;
+    const avgProgress = financialGoals.reduce((sum, goal) => {
+      const progress = goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
+      return sum + Math.min(progress, 100);
+    }, 0) / financialGoals.length;
+    return Math.round(avgProgress);
+  }, [financialGoals]);
 
   // ============================================
   // COMPUTED VALUES
@@ -466,12 +537,16 @@ export function FinancesProvider({ children }: { children: React.ReactNode }) {
     addFinancialGoal,
     updateFinancialGoal,
     deleteFinancialGoal,
+    addContribution,
+    simulateInvestmentReturn,
     totalPlanned,
     totalActual,
     remaining,
     availableBalance,
     savingsRate,
     budgetUsedPercent,
+    totalMonthlyAllocated,
+    totalGoalProgress,
     criticalCategories,
     insights,
   };
