@@ -2,6 +2,7 @@ import { CheckCircle2, Circle, Plus, GripVertical, Settings2, Flame } from "luci
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMVD } from "@/contexts/MVDContext";
+import { AnnualProgressChart, MonthComparisonCard } from "@/components/history/HistoryComponents";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useEffect, useRef } from "react";
@@ -185,6 +186,12 @@ const MVD = () => {
           </p>
         </CardContent>
       </Card>
+
+      {/* Annual History */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <AnnualProgressChart module="mvd" />
+        <MonthComparisonCard module="mvd" />
+      </div>
     </div>
   );
 };

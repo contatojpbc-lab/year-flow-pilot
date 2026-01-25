@@ -8,6 +8,7 @@ import { GoalsProvider } from "@/contexts/GoalsContext";
 import { MVDProvider } from "@/contexts/MVDContext";
 import { WeeklyReviewProvider } from "@/contexts/WeeklyReviewContext";
 import { FinancesProvider } from "@/contexts/FinancesContext";
+import { HistoryProvider } from "@/contexts/HistoryContext";
 import Dashboard from "./pages/Dashboard";
 import Goals from "./pages/Goals";
 import Routine from "./pages/Routine";
@@ -27,26 +28,28 @@ const App = () => (
       <MVDProvider>
         <WeeklyReviewProvider>
           <FinancesProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AppLayout>
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/goals" element={<Goals />} />
-                    <Route path="/routine" element={<Routine />} />
-                    <Route path="/review" element={<WeeklyReview />} />
-                    <Route path="/mvd" element={<MVD />} />
-                    <Route path="/finances" element={<Finances />} />
-                    <Route path="/journal" element={<Journal />} />
-                    <Route path="/reminders" element={<Reminders />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </AppLayout>
-              </BrowserRouter>
-            </TooltipProvider>
+            <HistoryProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <AppLayout>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/goals" element={<Goals />} />
+                      <Route path="/routine" element={<Routine />} />
+                      <Route path="/review" element={<WeeklyReview />} />
+                      <Route path="/mvd" element={<MVD />} />
+                      <Route path="/finances" element={<Finances />} />
+                      <Route path="/journal" element={<Journal />} />
+                      <Route path="/reminders" element={<Reminders />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </AppLayout>
+                </BrowserRouter>
+              </TooltipProvider>
+            </HistoryProvider>
           </FinancesProvider>
         </WeeklyReviewProvider>
       </MVDProvider>
