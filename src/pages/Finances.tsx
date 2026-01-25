@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Pencil, Trash2, X, Check, AlertTriangle, Lightbulb, DollarSign, Target, PiggyBank, LineChart, CreditCard, ShoppingBag } from "lucide-react";
+import { Plus, Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Pencil, Trash2, X, Check, AlertTriangle, Lightbulb, DollarSign, Target, PiggyBank, LineChart, CreditCard, ShoppingBag, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useFinances } from "@/contexts/FinancesContext";
+import { useHistory } from "@/contexts/HistoryContext";
+import { MonthComparisonCard, AnnualProgressChart, HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { cn } from "@/lib/utils";
 import { FinancialGoal } from "@/types";
 
@@ -908,6 +910,13 @@ const Finances = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Annual History & Trends */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <AnnualProgressChart module="finances" metric="savingsRate" />
+        <AnnualProgressChart module="finances" metric="budgetAdherence" />
+        <MonthComparisonCard module="finances" />
+      </div>
 
       {/* Contribution Dialog */}
       <Dialog open={contributionDialogOpen} onOpenChange={setContributionDialogOpen}>

@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { mockLifeAreas, mockRoutineItems } from "@/data/mockData";
 import { useGoals } from "@/contexts/GoalsContext";
+import { AnnualProgressChart, MonthComparisonCard } from "@/components/history/HistoryComponents";
 import { GoalStatus } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -143,6 +144,12 @@ const Goals = () => {
             <p className="text-xs text-muted-foreground">Create a SMART goal to track</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Annual Progress */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <AnnualProgressChart module="goals" />
+        <MonthComparisonCard module="goals" />
       </div>
     </div>
   );

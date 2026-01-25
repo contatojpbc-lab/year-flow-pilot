@@ -8,6 +8,7 @@ import { FinanceSnapshot } from "@/components/dashboard/FinanceSnapshot";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LifeAreaTrendsCard, HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { useGoals } from "@/contexts/GoalsContext";
 import { useMVD } from "@/contexts/MVDContext";
 import { cn } from "@/lib/utils";
@@ -159,12 +160,13 @@ const Dashboard = () => {
         {/* Center Column - Goals */}
         <div className="lg:col-span-1 space-y-6">
           <GoalsOverview goals={goals} lifeAreas={mockLifeAreas} />
-          <RecentActivity />
+          <LifeAreaTrendsCard />
         </div>
 
-        {/* Right Column - Finances */}
+        {/* Right Column - Finances & Insights */}
         <div className="space-y-6">
           <FinanceSnapshot plan={mockFinancialPlan} />
+          <HistoryInsightsCard maxInsights={3} />
           
           {/* Quick Journal Prompt */}
           <Card variant="interactive" className="animate-slide-up group">
