@@ -319,6 +319,9 @@ export interface Transaction extends BaseEntity {
 
 /**
  * Represents a financial goal (savings, investment, etc.).
+ * 
+ * @rule Monthly contribution is automatically added to currentAmount
+ * @rule Investment goals simulate returns based on expectedReturnRate
  */
 export interface FinancialGoal extends BaseEntity {
   title: string;
@@ -326,6 +329,20 @@ export interface FinancialGoal extends BaseEntity {
   currentAmount: number;
   deadline: Date;
   type: 'savings' | 'investment' | 'debt_payoff' | 'purchase';
+  monthlyContribution: number; // Amount allocated from income each month
+  expectedReturnRate?: number; // Annual return rate for investments (e.g., 0.12 = 12%)
+  contributions: GoalContribution[]; // History of contributions
+}
+
+/**
+ * Represents a contribution/deposit to a financial goal.
+ */
+export interface GoalContribution extends BaseEntity {
+  goalId: string;
+  amount: number;
+  date: Date;
+  type: 'manual' | 'scheduled' | 'investment_return';
+  notes?: string;
 }
 
 // ============================================

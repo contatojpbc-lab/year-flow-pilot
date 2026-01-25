@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Pencil, Trash2, X, Check, AlertTriangle, Lightbulb, DollarSign, Target } from "lucide-react";
+import { Plus, Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Pencil, Trash2, X, Check, AlertTriangle, Lightbulb, DollarSign, Target, PiggyBank, LineChart, CreditCard, ShoppingBag } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useFinances } from "@/contexts/FinancesContext";
 import { cn } from "@/lib/utils";
+import { FinancialGoal } from "@/types";
 
 const Finances = () => {
   const {
@@ -23,6 +24,8 @@ const Finances = () => {
     savingsRate,
     criticalCategories,
     insights,
+    totalMonthlyAllocated,
+    totalGoalProgress,
     addTransaction,
     updateTransaction,
     addCategory,
@@ -34,6 +37,8 @@ const Finances = () => {
     addFinancialGoal,
     updateFinancialGoal,
     deleteFinancialGoal,
+    addContribution,
+    simulateInvestmentReturn,
   } = useFinances();
 
   // Transaction form state
@@ -61,6 +66,22 @@ const Finances = () => {
     planned: plan.plannedIncome.toString(),
     actual: plan.actualIncome.toString(),
   });
+
+  // Financial goal form state
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false);
+  const [goalForm, setGoalForm] = useState({
+    title: '',
+    targetAmount: '',
+    monthlyContribution: '',
+    deadline: '',
+    type: 'savings' as FinancialGoal['type'],
+    expectedReturnRate: '',
+  });
+
+  // Contribution dialog state
+  const [contributionDialogOpen, setContributionDialogOpen] = useState(false);
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const [contributionAmount, setContributionAmount] = useState('');
 
   // Reset transaction form
   const resetTxForm = () => {
@@ -156,6 +177,59 @@ const Finances = () => {
     if (!isNaN(planned)) updatePlannedIncome(planned);
     if (!isNaN(actual)) updateActualIncome(actual);
     setEditingIncome(false);
+  };
+
+  // Handle add financial goal
+  const handleAddGoal = () => {
+    if (!goalForm.title || !goalForm.targetAmount || !goalForm.deadline) return;
+    
+    addFinancialGoal({
+      title: goalForm.title,
+      targetAmount: parseFloat(goalForm.targetAmount),
+      currentAmount: 0,
+      monthlyContribution: parseFloat(goalForm.monthlyContribution) || 0,
+      deadline: new Date(goalForm.deadline),
+      type: goalForm.type,
+      expectedReturnRate: goalForm.type === 'investment' && goalForm.expectedReturnRate 
+        ? parseFloat(goalForm.expectedReturnRate) / 100 
+        : undefined,
+    });
+
+    setGoalForm({
+      title: '',
+      targetAmount: '',
+      monthlyContribution: '',
+      deadline: '',
+      type: 'savings',
+      expectedReturnRate: '',
+    });
+    setGoalDialogOpen(false);
+  };
+
+  // Handle add contribution
+  const handleAddContribution = () => {
+    if (!selectedGoalId || !contributionAmount) return;
+    addContribution(selectedGoalId, parseFloat(contributionAmount), 'manual');
+    setContributionAmount('');
+    setContributionDialogOpen(false);
+    setSelectedGoalId(null);
+  };
+
+  // Open contribution dialog
+  const openContributionDialog = (goalId: string) => {
+    setSelectedGoalId(goalId);
+    setContributionDialogOpen(true);
+  };
+
+  // Get icon for goal type
+  const getGoalIcon = (type: FinancialGoal['type']) => {
+    switch (type) {
+      case 'savings': return <PiggyBank className="h-4 w-4" />;
+      case 'investment': return <LineChart className="h-4 w-4" />;
+      case 'debt_payoff': return <CreditCard className="h-4 w-4" />;
+      case 'purchase': return <ShoppingBag className="h-4 w-4" />;
+      default: return <Target className="h-4 w-4" />;
+    }
   };
 
   const colorOptions = [
@@ -263,6 +337,112 @@ const Finances = () => {
                   <Button variant="outline">Cancel</Button>
                 </DialogClose>
                 <Button onClick={handleAddCategory}>Add Category</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Financial Goal Dialog */}
+          <Dialog open={goalDialogOpen} onOpenChange={setGoalDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Target className="h-4 w-4 mr-2" />
+                Goal
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Financial Goal</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Goal Name</Label>
+                  <Input
+                    placeholder="e.g., Emergency Fund, New Phone, Vacation"
+                    value={goalForm.title}
+                    onChange={(e) => setGoalForm({ ...goalForm, title: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Goal Type</Label>
+                  <Select 
+                    value={goalForm.type} 
+                    onValueChange={(v: FinancialGoal['type']) => setGoalForm({ ...goalForm, type: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="savings">
+                        <div className="flex items-center gap-2">
+                          <PiggyBank className="h-4 w-4" /> Savings
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="investment">
+                        <div className="flex items-center gap-2">
+                          <LineChart className="h-4 w-4" /> Investment
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="purchase">
+                        <div className="flex items-center gap-2">
+                          <ShoppingBag className="h-4 w-4" /> Purchase
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="debt_payoff">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-4 w-4" /> Debt Payoff
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Target Amount</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={goalForm.targetAmount}
+                      onChange={(e) => setGoalForm({ ...goalForm, targetAmount: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Monthly Contribution</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={goalForm.monthlyContribution}
+                      onChange={(e) => setGoalForm({ ...goalForm, monthlyContribution: e.target.value })}
+                    />
+                  </div>
+                </div>
+                {goalForm.type === 'investment' && (
+                  <div className="space-y-2">
+                    <Label>Expected Annual Return (%)</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g., 12"
+                      value={goalForm.expectedReturnRate}
+                      onChange={(e) => setGoalForm({ ...goalForm, expectedReturnRate: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Used to simulate investment returns
+                    </p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>Target Date</Label>
+                  <Input
+                    type="date"
+                    value={goalForm.deadline}
+                    onChange={(e) => setGoalForm({ ...goalForm, deadline: e.target.value })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button onClick={handleAddGoal}>Create Goal</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -601,8 +781,13 @@ const Finances = () => {
       {/* Financial Goals Progress */}
       {financialGoals.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Financial Goals</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-semibold">Financial Goals</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                {formatCurrency(totalMonthlyAllocated)} allocated monthly • {totalGoalProgress}% avg progress
+              </p>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {financialGoals.map((goal) => {
@@ -610,22 +795,42 @@ const Finances = () => {
                 ? Math.round((goal.currentAmount / goal.targetAmount) * 100) 
                 : 0;
               const daysRemaining = Math.ceil((new Date(goal.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+              const monthsRemaining = Math.ceil(daysRemaining / 30);
+              const projectedAmount = goal.currentAmount + (goal.monthlyContribution * monthsRemaining);
+              const willReachGoal = projectedAmount >= goal.targetAmount;
               
               return (
-                <div key={goal.id} className="space-y-2 group">
+                <div key={goal.id} className="p-4 rounded-lg bg-secondary/30 space-y-3 group">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium text-foreground">{goal.title}</span>
-                      <span className={cn(
-                        "text-xs px-2 py-0.5 rounded-full",
+                      <div className={cn(
+                        "h-8 w-8 rounded-full flex items-center justify-center",
                         goal.type === 'savings' && "bg-success/20 text-success",
                         goal.type === 'investment' && "bg-primary/20 text-primary",
                         goal.type === 'debt_payoff' && "bg-warning/20 text-warning",
                         goal.type === 'purchase' && "bg-secondary text-muted-foreground"
                       )}>
-                        {goal.type.replace('_', ' ')}
-                      </span>
+                        {getGoalIcon(goal.type)}
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-foreground">{goal.title}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "text-xs px-2 py-0.5 rounded-full",
+                            goal.type === 'savings' && "bg-success/20 text-success",
+                            goal.type === 'investment' && "bg-primary/20 text-primary",
+                            goal.type === 'debt_payoff' && "bg-warning/20 text-warning",
+                            goal.type === 'purchase' && "bg-secondary text-muted-foreground"
+                          )}>
+                            {goal.type.replace('_', ' ')}
+                          </span>
+                          {goal.monthlyContribution > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              {formatCurrency(goal.monthlyContribution)}/mo
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-right">
@@ -636,6 +841,25 @@ const Finances = () => {
                           {' '}/ {formatCurrency(goal.targetAmount)}
                         </span>
                       </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => openContributionDialog(goal.id)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" /> Add
+                      </Button>
+                      {goal.type === 'investment' && goal.expectedReturnRate && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => simulateInvestmentReturn(goal.id)}
+                          title="Simulate monthly return"
+                        >
+                          <TrendingUp className="h-3 w-3" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -651,15 +875,65 @@ const Finances = () => {
                     size="sm"
                     indicatorColor={progress >= 100 ? "success" : progress >= 50 ? "default" : "warning"}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    {progress}% complete • {daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Deadline passed'}
-                  </p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                      {progress}% complete • {daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Deadline passed'}
+                    </span>
+                    {goal.monthlyContribution > 0 && daysRemaining > 0 && (
+                      <span className={cn(
+                        willReachGoal ? "text-success" : "text-warning"
+                      )}>
+                        Projected: {formatCurrency(projectedAmount)} {willReachGoal ? '✓' : '⚠'}
+                      </span>
+                    )}
+                  </div>
+                  {goal.contributions && goal.contributions.length > 0 && (
+                    <div className="pt-2 border-t border-border/50">
+                      <p className="text-xs text-muted-foreground mb-2">Recent contributions</p>
+                      <div className="space-y-1">
+                        {goal.contributions.slice(-3).reverse().map((contrib) => (
+                          <div key={contrib.id} className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">
+                              {formatDate(contrib.date)} • {contrib.type === 'investment_return' ? 'Return' : 'Deposit'}
+                            </span>
+                            <span className="text-success font-medium">+{formatCurrency(contrib.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </CardContent>
         </Card>
       )}
+
+      {/* Contribution Dialog */}
+      <Dialog open={contributionDialogOpen} onOpenChange={setContributionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Contribution</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Amount</Label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={contributionAmount}
+                onChange={(e) => setContributionAmount(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleAddContribution}>Add Contribution</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
