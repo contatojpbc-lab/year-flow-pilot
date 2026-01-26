@@ -224,50 +224,30 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const insights = useMemo((): HistoryInsight[] => {
     const result: HistoryInsight[] = [];
     const comparison = getMonthComparison();
+    const lifeAreaTrends = getLifeAreaTrends();
     
-    // Goals insights
-    if (comparison.goals.trend.direction === 'up' && comparison.goals.trend.percentage >= 10) {
-      result.push({
-        id: 'goals-up',
-        type: 'improvement',
-        module: 'goals',
-        message: `Great progress! Goals advanced ${comparison.goals.trend.percentage}% compared to ${getMonthName(comparison.previousMonth)}`,
-        metric: 'averageProgress',
-        currentValue: comparison.goals.current,
-        previousValue: comparison.goals.previous,
-        trend: 'up',
-      });
-    } else if (comparison.goals.trend.direction === 'down') {
-      result.push({
-        id: 'goals-down',
-        type: 'decline',
-        module: 'goals',
-        message: `Goals progress slowed by ${comparison.goals.trend.percentage}% this month`,
-        metric: 'averageProgress',
-        currentValue: comparison.goals.current,
-        previousValue: comparison.goals.previous,
-        trend: 'down',
-      });
-    }
+    // ========================================
+    // CONSISTENCY INSIGHTS (30-day pattern)
+    // ========================================
     
-    // Habits insights
-    if (comparison.habits.trend.direction === 'up') {
+    // Habits consistency change
+    if (comparison.habits.trend.direction === 'up' && comparison.habits.trend.percentage >= 10) {
       result.push({
-        id: 'habits-up',
-        type: 'improvement',
+        id: 'consistency-up',
+        type: 'achievement',
         module: 'habits',
-        message: `Habit consistency improved ${comparison.habits.trend.percentage}% from last month`,
+        message: `Sua consistência aumentou ${comparison.habits.trend.percentage}% nos últimos 30 dias`,
         metric: 'consistencyRate',
         currentValue: comparison.habits.current,
         previousValue: comparison.habits.previous,
         trend: 'up',
       });
-    } else if (comparison.habits.trend.direction === 'down') {
+    } else if (comparison.habits.trend.direction === 'down' && comparison.habits.trend.percentage >= 5) {
       result.push({
-        id: 'habits-down',
+        id: 'consistency-down',
         type: 'warning',
         module: 'habits',
-        message: `Habit consistency dropped ${comparison.habits.trend.percentage}% - consider reviewing your routine`,
+        message: `Sua consistência caiu ${comparison.habits.trend.percentage}% - revise sua rotina`,
         metric: 'consistencyRate',
         currentValue: comparison.habits.current,
         previousValue: comparison.habits.previous,
@@ -275,60 +255,142 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
     }
     
-    // MVD insights
-    if (comparison.mvd.current >= 90) {
+    // ========================================
+    // MVD-FINANCE CORRELATION INSIGHTS
+    // ========================================
+    
+    const currentMVD = history.mvd.find(m => m.month === currentMonth);
+    const currentFinances = history.finances.find(f => f.month === currentMonth);
+    const prevMVD = history.mvd.find(m => m.month === (currentMonth === 1 ? 12 : currentMonth - 1));
+    const prevFinances = history.finances.find(f => f.month === (currentMonth === 1 ? 12 : currentMonth - 1));
+    
+    // Check if MVD completion correlates with better finances
+    if (currentMVD && currentFinances && prevMVD && prevFinances) {
+      const mvdImproved = currentMVD.completionRate > prevMVD.completionRate;
+      const financesImproved = currentFinances.savingsRate > prevFinances.savingsRate || 
+                               currentFinances.budgetAdherence > prevFinances.budgetAdherence;
+      
+      if (mvdImproved && financesImproved) {
+        result.push({
+          id: 'mvd-finance-correlation',
+          type: 'improvement',
+          module: 'mvd',
+          message: 'Finanças melhoram quando MVD é concluído',
+          metric: 'correlation',
+          currentValue: currentMVD.completionRate,
+          previousValue: prevMVD.completionRate,
+          trend: 'up',
+        });
+      }
+    }
+    
+    // High MVD completion achievement
+    if (currentMVD && currentMVD.completionRate >= 90) {
       result.push({
-        id: 'mvd-achievement',
+        id: 'mvd-excellence',
         type: 'achievement',
         module: 'mvd',
-        message: `Excellent! ${comparison.mvd.current}% MVD completion rate this month`,
+        message: `Excelente! ${currentMVD.completionRate}% de conclusão do MVD este mês`,
         metric: 'completionRate',
-        currentValue: comparison.mvd.current,
-        previousValue: comparison.mvd.previous,
+        currentValue: currentMVD.completionRate,
+        previousValue: prevMVD?.completionRate || 0,
         trend: comparison.mvd.trend.direction,
       });
-    } else if (comparison.mvd.trend.direction === 'down' && comparison.mvd.trend.percentage >= 10) {
-      result.push({
-        id: 'mvd-down',
-        type: 'warning',
-        module: 'mvd',
-        message: `MVD completion dropped ${comparison.mvd.trend.percentage}% - refocus on your non-negotiables`,
-        metric: 'completionRate',
-        currentValue: comparison.mvd.current,
-        previousValue: comparison.mvd.previous,
-        trend: 'down',
-      });
     }
     
-    // Finance insights
-    if (comparison.finances.savingsRate.current > comparison.finances.savingsRate.previous) {
+    // ========================================
+    // LIFE AREA STAGNATION INSIGHTS
+    // ========================================
+    
+    // Check for stagnant life areas (3+ weeks/months without significant change)
+    lifeAreaTrends.forEach(area => {
+      if (area.monthlyData.length >= 3) {
+        const recentMonths = area.monthlyData.slice(-3);
+        const scores = recentMonths.map(m => m.overallScore);
+        const variance = Math.max(...scores) - Math.min(...scores);
+        
+        // If variance is less than 5% over 3 months, area is stagnant
+        if (variance < 5) {
+          result.push({
+            id: `stagnant-${area.lifeAreaId}`,
+            type: 'warning',
+            module: 'lifeArea',
+            message: `Área ${area.lifeAreaName} está estagnada há 3 semanas`,
+            metric: 'overallScore',
+            currentValue: scores[scores.length - 1],
+            previousValue: scores[0],
+            trend: 'stable',
+            lifeAreaId: area.lifeAreaId,
+          });
+        }
+      }
+    });
+    
+    // ========================================
+    // GOALS PROGRESS INSIGHTS
+    // ========================================
+    
+    if (comparison.goals.trend.direction === 'up' && comparison.goals.trend.percentage >= 10) {
       result.push({
-        id: 'savings-up',
+        id: 'goals-momentum',
         type: 'improvement',
-        module: 'finances',
-        message: `Savings rate increased to ${comparison.finances.savingsRate.current}% (+${comparison.finances.savingsRate.trend.percentage}%)`,
-        metric: 'savingsRate',
-        currentValue: comparison.finances.savingsRate.current,
-        previousValue: comparison.finances.savingsRate.previous,
+        module: 'goals',
+        message: `Suas metas avançaram ${comparison.goals.trend.percentage}% comparado a ${getMonthName(comparison.previousMonth)}`,
+        metric: 'averageProgress',
+        currentValue: comparison.goals.current,
+        previousValue: comparison.goals.previous,
         trend: 'up',
       });
-    }
-    
-    if (comparison.finances.budgetAdherence.trend.direction === 'down') {
+    } else if (comparison.goals.trend.direction === 'down' && comparison.goals.trend.percentage >= 5) {
       result.push({
-        id: 'budget-down',
-        type: 'warning',
-        module: 'finances',
-        message: `Budget adherence dropped to ${comparison.finances.budgetAdherence.current}% - review spending patterns`,
-        metric: 'budgetAdherence',
-        currentValue: comparison.finances.budgetAdherence.current,
-        previousValue: comparison.finances.budgetAdherence.previous,
+        id: 'goals-slowdown',
+        type: 'decline',
+        module: 'goals',
+        message: `Progresso das metas desacelerou ${comparison.goals.trend.percentage}% este mês`,
+        metric: 'averageProgress',
+        currentValue: comparison.goals.current,
+        previousValue: comparison.goals.previous,
         trend: 'down',
       });
     }
     
-    // Life area insights
-    const lifeAreaTrends = getLifeAreaTrends();
+    // ========================================
+    // FINANCE INSIGHTS
+    // ========================================
+    
+    if (currentFinances) {
+      if (currentFinances.savingsRate >= 20) {
+        result.push({
+          id: 'savings-excellent',
+          type: 'achievement',
+          module: 'finances',
+          message: `Você está economizando ${currentFinances.savingsRate}% da renda - excelente!`,
+          metric: 'savingsRate',
+          currentValue: currentFinances.savingsRate,
+          previousValue: prevFinances?.savingsRate || 0,
+          trend: 'up',
+        });
+      }
+      
+      if (comparison.finances.budgetAdherence.trend.direction === 'down' && 
+          comparison.finances.budgetAdherence.trend.percentage >= 10) {
+        result.push({
+          id: 'budget-warning',
+          type: 'warning',
+          module: 'finances',
+          message: `Aderência ao orçamento caiu para ${comparison.finances.budgetAdherence.current}% - revise gastos`,
+          metric: 'budgetAdherence',
+          currentValue: comparison.finances.budgetAdherence.current,
+          previousValue: comparison.finances.budgetAdherence.previous,
+          trend: 'down',
+        });
+      }
+    }
+    
+    // ========================================
+    // TOP PERFORMER & NEEDS ATTENTION
+    // ========================================
+    
     const topImprover = lifeAreaTrends
       .filter(la => la.trend.direction === 'up')
       .sort((a, b) => b.trend.percentage - a.trend.percentage)[0];
@@ -342,7 +404,7 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         id: 'lifearea-top',
         type: 'achievement',
         module: 'lifeArea',
-        message: `${topImprover.lifeAreaName} is your fastest growing area (+${topImprover.trend.percentage}%)`,
+        message: `${topImprover.lifeAreaName} é sua área com maior crescimento (+${topImprover.trend.percentage}%)`,
         metric: 'overallScore',
         currentValue: topImprover.monthlyData[topImprover.monthlyData.length - 1]?.overallScore || 0,
         previousValue: topImprover.monthlyData[0]?.overallScore || 0,
@@ -353,10 +415,10 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     if (topDecliner && topDecliner.trend.percentage >= 10) {
       result.push({
-        id: 'lifearea-declining',
+        id: 'lifearea-attention',
         type: 'warning',
         module: 'lifeArea',
-        message: `${topDecliner.lifeAreaName} needs attention (-${topDecliner.trend.percentage}% this year)`,
+        message: `${topDecliner.lifeAreaName} precisa de atenção (-${topDecliner.trend.percentage}% este ano)`,
         metric: 'overallScore',
         currentValue: topDecliner.monthlyData[topDecliner.monthlyData.length - 1]?.overallScore || 0,
         previousValue: topDecliner.monthlyData[0]?.overallScore || 0,
@@ -365,8 +427,25 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
     }
     
+    // ========================================
+    // STREAK INSIGHTS
+    // ========================================
+    
+    if (currentMVD && currentMVD.longestStreakInMonth >= 7) {
+      result.push({
+        id: 'streak-achievement',
+        type: 'achievement',
+        module: 'mvd',
+        message: `Sua maior sequência este mês foi de ${currentMVD.longestStreakInMonth} dias!`,
+        metric: 'longestStreakInMonth',
+        currentValue: currentMVD.longestStreakInMonth,
+        previousValue: prevMVD?.longestStreakInMonth || 0,
+        trend: 'up',
+      });
+    }
+    
     return result;
-  }, [getMonthComparison, getLifeAreaTrends]);
+  }, [getMonthComparison, getLifeAreaTrends, history.mvd, history.finances, currentMonth]);
 
   const value: HistoryContextType = {
     history,
