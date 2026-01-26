@@ -9,6 +9,7 @@ import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LifeAreaTrendsCard, HistoryInsightsCard } from "@/components/history/HistoryComponents";
+import { MonthlyReportSummary } from "@/components/reports/MonthlyReportCard";
 import { useGoals } from "@/contexts/GoalsContext";
 import { useMVD } from "@/contexts/MVDContext";
 import { cn } from "@/lib/utils";
@@ -163,25 +164,11 @@ const Dashboard = () => {
           <LifeAreaTrendsCard />
         </div>
 
-        {/* Right Column - Finances & Insights */}
+        {/* Right Column - Finances, Monthly Report & Insights */}
         <div className="space-y-6">
           <FinanceSnapshot plan={mockFinancialPlan} />
+          <MonthlyReportSummary />
           <HistoryInsightsCard maxInsights={3} />
-          
-          {/* Quick Journal Prompt */}
-          <Card variant="interactive" className="animate-slide-up group">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <span className="text-lg">✍️</span>
-                </div>
-                <h3 className="font-medium text-foreground">Daily Reflection</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                What's one thing you're grateful for today?
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

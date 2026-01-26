@@ -2,14 +2,16 @@ import { useState } from "react";
 import { 
   Star, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, 
   ArrowRight, Calendar, CheckCircle2, Target, Flame, 
-  Sparkles, Save, X 
+  Sparkles, Save, X, FileText
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWeeklyReview } from "@/contexts/WeeklyReviewContext";
+import { MonthlyReportCard } from "@/components/reports/MonthlyReportCard";
 import { mockWeeklyReviews } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -49,22 +51,40 @@ const WeeklyReview = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
+      {/* Header with Tabs */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground">Weekly Review</h1>
-          <p className="text-muted-foreground">Reflect on your progress and plan ahead</p>
+          <h1 className="text-2xl font-bold text-foreground">Revisões</h1>
+          <p className="text-muted-foreground">Reflita sobre seu progresso semanal e mensal</p>
         </div>
-        {!isReviewMode && (
-          <Button variant="glow" onClick={() => setIsReviewMode(true)}>
-            Start Week {currentWeek} Review
-          </Button>
-        )}
       </div>
 
-      {/* Review Mode */}
-      {isReviewMode ? (
-        <div className="space-y-6">
+      <Tabs defaultValue="weekly" className="space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="weekly" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Semanal
+          </TabsTrigger>
+          <TabsTrigger value="monthly" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Mensal
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Weekly Review Tab */}
+        <TabsContent value="weekly" className="space-y-6">
+          {/* Weekly Review Header */}
+          {!isReviewMode && (
+            <div className="flex items-center justify-end">
+              <Button variant="glow" onClick={() => setIsReviewMode(true)}>
+                Start Week {currentWeek} Review
+              </Button>
+            </div>
+          )}
+
+          {/* Review Mode */}
+          {isReviewMode ? (
+          <div className="space-y-6">
           {/* Week Header */}
           <Card variant="glow" className="overflow-hidden">
             <div className="h-1 gradient-primary" />
@@ -455,8 +475,15 @@ const WeeklyReview = () => {
               </Card>
             )}
           </div>
-        </>
-      )}
+          </>
+          )}
+        </TabsContent>
+
+        {/* Monthly Report Tab */}
+        <TabsContent value="monthly">
+          <MonthlyReportCard />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
