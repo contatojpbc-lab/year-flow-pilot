@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   Star, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, 
   ArrowRight, Calendar, CheckCircle2, Target, Flame, 
-  Sparkles, Save, X, FileText
+  Sparkles, Save, X, FileText, Activity
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWeeklyReview } from "@/contexts/WeeklyReviewContext";
 import { MonthlyReportCard } from "@/components/reports/MonthlyReportCard";
+import { EvolutionMetricsPanel, LifeAreaEvolutionCard } from "@/components/history/EvolutionMetrics";
+import { HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { mockWeeklyReviews } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -60,7 +62,7 @@ const WeeklyReview = () => {
       </div>
 
       <Tabs defaultValue="weekly" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
           <TabsTrigger value="weekly" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             Semanal
@@ -68,6 +70,10 @@ const WeeklyReview = () => {
           <TabsTrigger value="monthly" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Mensal
+          </TabsTrigger>
+          <TabsTrigger value="evolution" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Evolução
           </TabsTrigger>
         </TabsList>
 
@@ -482,6 +488,23 @@ const WeeklyReview = () => {
         {/* Monthly Report Tab */}
         <TabsContent value="monthly">
           <MonthlyReportCard />
+        </TabsContent>
+
+        {/* Evolution Metrics Tab */}
+        <TabsContent value="evolution" className="space-y-6">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold text-foreground">Métricas de Evolução</h2>
+            <p className="text-sm text-muted-foreground">
+              Acompanhe sua evolução ao longo do tempo com métricas detalhadas
+            </p>
+          </div>
+
+          <EvolutionMetricsPanel layout="grid" />
+          
+          <div className="grid gap-6 lg:grid-cols-2">
+            <LifeAreaEvolutionCard />
+            <HistoryInsightsCard maxInsights={5} />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
