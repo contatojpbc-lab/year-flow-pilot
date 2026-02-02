@@ -10,10 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LifeAreaTrendsCard, HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { MonthlyReportSummary } from "@/components/reports/MonthlyReportCard";
+import { ConsistencyMetricsCard, MVDCompletionMetricsCard, RoutineGoalsCorrelationCard } from "@/components/history/EvolutionMetrics";
 import { useGoals } from "@/contexts/GoalsContext";
 import { useMVD } from "@/contexts/MVDContext";
 import { cn } from "@/lib/utils";
-import { 
+import {
   mockDashboardStats, 
   mockLifeAreas, 
   mockFinancialPlan 
@@ -156,18 +157,22 @@ const Dashboard = () => {
             items={items} 
             completedItems={completedItems}
           />
+          
+          {/* Consistency Metrics */}
+          <ConsistencyMetricsCard />
         </div>
 
-        {/* Center Column - Goals */}
+        {/* Center Column - Goals & Evolution */}
         <div className="lg:col-span-1 space-y-6">
           <GoalsOverview goals={goals} lifeAreas={mockLifeAreas} />
           <LifeAreaTrendsCard />
+          <RoutineGoalsCorrelationCard />
         </div>
 
-        {/* Right Column - Finances, Monthly Report & Insights */}
+        {/* Right Column - Finances, MVD Metrics & Insights */}
         <div className="space-y-6">
           <FinanceSnapshot plan={mockFinancialPlan} />
-          <MonthlyReportSummary />
+          <MVDCompletionMetricsCard />
           <HistoryInsightsCard maxInsights={3} />
         </div>
       </div>
