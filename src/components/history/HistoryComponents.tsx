@@ -1,4 +1,7 @@
-import { TrendingUp, TrendingDown, Minus, BarChart3 } from "lucide-react";
+import { 
+  TrendingUp, TrendingDown, Minus, BarChart3, 
+  Flame, Target, Wallet, Brain, Zap, Award, AlertTriangle, Lightbulb
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -33,19 +36,59 @@ const TrendBadge = ({ direction, percentage }: { direction: TrendDirection; perc
   </Badge>
 );
 
+// Context-aware icon based on insight type and module
+const InsightIcon = ({ insight }: { insight: HistoryInsight }) => {
+  const baseClasses = "h-4 w-4 shrink-0";
+  
+  // Icon based on type
+  if (insight.type === 'achievement') {
+    return <Award className={cn(baseClasses, "text-primary")} />;
+  }
+  if (insight.type === 'warning') {
+    return <AlertTriangle className={cn(baseClasses, "text-destructive")} />;
+  }
+  
+  // Icon based on module for improvement/decline
+  switch (insight.module) {
+    case 'habits':
+      return <Flame className={cn(baseClasses, insight.trend === 'up' ? "text-success" : "text-warning")} />;
+    case 'mvd':
+      return <Zap className={cn(baseClasses, insight.trend === 'up' ? "text-success" : "text-warning")} />;
+    case 'goals':
+      return <Target className={cn(baseClasses, insight.trend === 'up' ? "text-success" : "text-warning")} />;
+    case 'finances':
+      return <Wallet className={cn(baseClasses, insight.trend === 'up' ? "text-success" : "text-warning")} />;
+    case 'lifeArea':
+      return <Brain className={cn(baseClasses, insight.trend === 'up' ? "text-success" : insight.trend === 'down' ? "text-warning" : "text-muted-foreground")} />;
+    default:
+      return <Lightbulb className={cn(baseClasses, "text-primary")} />;
+  }
+};
+
 const InsightCard = ({ insight }: { insight: HistoryInsight }) => (
   <div
     className={cn(
-      "p-3 rounded-lg text-sm",
+      "p-3 rounded-lg text-sm transition-all hover:scale-[1.01]",
       insight.type === 'improvement' && "bg-success/10 border border-success/20",
       insight.type === 'achievement' && "bg-primary/10 border border-primary/20",
       insight.type === 'decline' && "bg-warning/10 border border-warning/20",
       insight.type === 'warning' && "bg-destructive/10 border border-destructive/20"
     )}
   >
-    <div className="flex items-start gap-2">
-      <TrendIcon direction={insight.trend} className="mt-0.5" />
-      <span>{insight.message}</span>
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5">
+        <InsightIcon insight={insight} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-foreground leading-relaxed">{insight.message}</p>
+        {insight.currentValue !== undefined && insight.previousValue !== undefined && (
+          <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
+            <span>{insight.previousValue}%</span>
+            <TrendingUp className="h-3 w-3" />
+            <span className="font-medium text-foreground">{insight.currentValue}%</span>
+          </div>
+        )}
+      </div>
     </div>
   </div>
 );
@@ -254,9 +297,16 @@ export const LifeAreaTrendsCard = ({ lifeAreaId }: LifeAreaTrendsCardProps) => {
 interface HistoryInsightsCardProps {
   module?: 'goals' | 'habits' | 'mvd' | 'finances' | 'lifeArea';
   maxInsights?: number;
+  showHeader?: boolean;
+  title?: string;
 }
 
-export const HistoryInsightsCard = ({ module, maxInsights = 3 }: HistoryInsightsCardProps) => {
+export const HistoryInsightsCard = ({ 
+  module, 
+  maxInsights = 3, 
+  showHeader = true,
+  title = "Insights Automáticos"
+}: HistoryInsightsCardProps) => {
   const { insights } = useHistory();
 
   const filteredInsights = module
@@ -269,15 +319,62 @@ export const HistoryInsightsCard = ({ module, maxInsights = 3 }: HistoryInsights
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium">Trends & Insights</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
+      {showHeader && (
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Baseado nos seus dados históricos
+          </p>
+        </CardHeader>
+      )}
+      <CardContent className={cn("space-y-2", !showHeader && "pt-4")}>
         {displayInsights.map((insight) => (
           <InsightCard key={insight.id} insight={insight} />
         ))}
       </CardContent>
     </Card>
+  );
+};
+
+// Compact inline insights for embedding in other sections
+export const InlineInsights = ({ 
+  module, 
+  maxInsights = 2 
+}: { 
+  module?: 'goals' | 'habits' | 'mvd' | 'finances' | 'lifeArea';
+  maxInsights?: number;
+}) => {
+  const { insights } = useHistory();
+
+  const filteredInsights = module
+    ? insights.filter((i) => i.module === module)
+    : insights;
+
+  const displayInsights = filteredInsights.slice(0, maxInsights);
+
+  if (displayInsights.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      {displayInsights.map((insight) => (
+        <div
+          key={insight.id}
+          className={cn(
+            "flex items-center gap-2 text-xs p-2 rounded-md",
+            insight.type === 'improvement' && "bg-success/5 text-success",
+            insight.type === 'achievement' && "bg-primary/5 text-primary",
+            insight.type === 'decline' && "bg-warning/5 text-warning",
+            insight.type === 'warning' && "bg-destructive/5 text-destructive"
+          )}
+        >
+          <InsightIcon insight={insight} />
+          <span className="truncate">{insight.message}</span>
+        </div>
+      ))}
+    </div>
   );
 };
 
@@ -356,4 +453,4 @@ export const AnnualProgressChart = ({ module, metric = 'savingsRate' }: AnnualPr
   );
 };
 
-export { TrendIcon, TrendBadge, InsightCard };
+export { TrendIcon, TrendBadge, InsightCard, InsightIcon };
