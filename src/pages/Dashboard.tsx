@@ -6,6 +6,7 @@ import { MVDIndicator } from "@/components/dashboard/MVDIndicator";
 import { GoalsOverview } from "@/components/dashboard/GoalsOverview";
 import { FinanceSnapshot } from "@/components/dashboard/FinanceSnapshot";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { DailyPriorities } from "@/components/dashboard/DailyPriorities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LifeAreaTrendsCard, HistoryInsightsCard } from "@/components/history/HistoryComponents";
@@ -136,7 +137,7 @@ const Dashboard = () => {
 
       {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left Column - Progress & MVD */}
+        {/* Left Column - Progress, MVD & Priorities */}
         <div className="space-y-6">
           {/* Overall Progress */}
           <Card className="animate-slide-up">
@@ -162,17 +163,18 @@ const Dashboard = () => {
           <ConsistencyMetricsCard />
         </div>
 
-        {/* Center Column - Goals & Evolution */}
+        {/* Center Column - Daily Priorities & Goals */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Daily Priorities - Main Focus */}
+          <DailyPriorities />
           <GoalsOverview goals={goals} lifeAreas={mockLifeAreas} />
-          <LifeAreaTrendsCard />
           <RoutineGoalsCorrelationCard />
         </div>
 
-        {/* Right Column - Finances, MVD Metrics & Insights */}
+        {/* Right Column - Finances, Trends & Insights */}
         <div className="space-y-6">
           <FinanceSnapshot plan={mockFinancialPlan} />
-          <MVDCompletionMetricsCard />
+          <LifeAreaTrendsCard />
           <HistoryInsightsCard maxInsights={3} />
         </div>
       </div>
