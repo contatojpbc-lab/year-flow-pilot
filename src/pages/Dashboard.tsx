@@ -13,6 +13,7 @@ import { LifeAreaTrendsCard, HistoryInsightsCard } from "@/components/history/Hi
 import { MonthlyReportSummary } from "@/components/reports/MonthlyReportCard";
 import { ConsistencyMetricsCard, MVDCompletionMetricsCard, RoutineGoalsCorrelationCard } from "@/components/history/EvolutionMetrics";
  import { MentalLoadAlert } from "@/components/dashboard/MentalLoadAlert";
+ import { SmartRecommendations } from "@/components/dashboard/SmartRecommendations";
 import { useGoals } from "@/contexts/GoalsContext";
 import { useMVD } from "@/contexts/MVDContext";
 import { cn } from "@/lib/utils";
@@ -169,14 +170,15 @@ const Dashboard = () => {
         <div className="lg:col-span-1 space-y-6">
           {/* Daily Priorities - Main Focus */}
           <DailyPriorities />
+           <SmartRecommendations />
           <GoalsOverview goals={goals} lifeAreas={mockLifeAreas} />
-          <RoutineGoalsCorrelationCard />
         </div>
 
         {/* Right Column - Finances, Trends & Insights */}
         <div className="space-y-6">
           <FinanceSnapshot plan={mockFinancialPlan} />
           <LifeAreaTrendsCard />
+           <RoutineGoalsCorrelationCard />
           <HistoryInsightsCard maxInsights={3} />
         </div>
       </div>
