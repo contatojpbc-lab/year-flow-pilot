@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Target, Flame, Calendar, TrendingUp, PartyPopper, AlertCircle } from "lucide-react";
+ import { Target, Flame, Calendar, TrendingUp, PartyPopper, AlertCircle, Zap } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ProgressRing } from "@/components/dashboard/ProgressRing";
 import { MVDIndicator } from "@/components/dashboard/MVDIndicator";
@@ -14,8 +14,11 @@ import { MonthlyReportSummary } from "@/components/reports/MonthlyReportCard";
 import { ConsistencyMetricsCard, MVDCompletionMetricsCard, RoutineGoalsCorrelationCard } from "@/components/history/EvolutionMetrics";
  import { MentalLoadAlert } from "@/components/dashboard/MentalLoadAlert";
  import { SmartRecommendations } from "@/components/dashboard/SmartRecommendations";
+ import { ExecutionModeToggle } from "@/components/dashboard/ExecutionModeToggle";
+ import { LightModeView } from "@/components/dashboard/LightModeView";
 import { useGoals } from "@/contexts/GoalsContext";
 import { useMVD } from "@/contexts/MVDContext";
+ import { useExecutionMode } from "@/contexts/ExecutionModeContext";
 import { cn } from "@/lib/utils";
 import {
   mockDashboardStats, 
@@ -26,6 +29,7 @@ import {
 const Dashboard = () => {
   const { goals } = useGoals();
   const { items, completedItems, allCompleted, currentStreak, longestStreak } = useMVD();
+   const { isLightMode } = useExecutionMode();
   const stats = mockDashboardStats;
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -100,12 +104,22 @@ const Dashboard = () => {
 
       {/* Header */}
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground">Good morning!</h1>
-        <p className="text-muted-foreground">Here's your Life OS overview for today.</p>
+         <div className="flex items-center justify-between">
+           <div>
+             <h1 className="text-2xl font-bold text-foreground">Good morning!</h1>
+             <p className="text-muted-foreground">Here's your Life OS overview for today.</p>
+           </div>
+           <ExecutionModeToggle />
+         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+       {/* Light Mode View - Replaces normal dashboard */}
+       {isLightMode ? (
+         <LightModeView />
+       ) : (
+         <>
+           {/* Stats Grid */}
+           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Active Goals"
           value={stats.activeGoals}
@@ -136,10 +150,10 @@ const Dashboard = () => {
           trend="up"
           trendValue="+5%"
         />
-      </div>
+           </div>
 
-      {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
+           {/* Main Content Grid */}
+           <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column - Progress, MVD & Priorities */}
         <div className="space-y-6">
           {/* Overall Progress */}
@@ -181,7 +195,9 @@ const Dashboard = () => {
            <RoutineGoalsCorrelationCard />
           <HistoryInsightsCard maxInsights={3} />
         </div>
-      </div>
+           </div>
+         </>
+       )}
     </div>
   );
 };
