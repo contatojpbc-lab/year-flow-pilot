@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LifeAreaTrendsCard, HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { MonthlyReportSummary } from "@/components/reports/MonthlyReportCard";
 import { ConsistencyMetricsCard, MVDCompletionMetricsCard, RoutineGoalsCorrelationCard } from "@/components/history/EvolutionMetrics";
+ import { MentalLoadAlert } from "@/components/dashboard/MentalLoadAlert";
 import { useGoals } from "@/contexts/GoalsContext";
 import { useMVD } from "@/contexts/MVDContext";
 import { cn } from "@/lib/utils";
@@ -71,29 +72,30 @@ const Dashboard = () => {
       )}
 
       {/* Subtle Alerts Section */}
-      {(stagnantGoals.length > 0 || mvdNotStarted) && (
-        <div className="space-y-2">
-          {mvdNotStarted && (
-            <Alert className="border-warning/30 bg-warning/5">
-              <AlertCircle className="h-4 w-4 text-warning" />
-              <AlertDescription className="text-sm text-warning">
-                Seu MVD ainda não foi iniciado hoje. Comece com o primeiro item!
-              </AlertDescription>
-            </Alert>
-          )}
-          {stagnantGoals.length > 0 && (
-            <Alert className="border-muted-foreground/30 bg-muted/30">
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
-              <AlertDescription className="text-sm text-muted-foreground">
-                {stagnantGoals.length === 1 
-                  ? `A meta "${stagnantGoals[0].title}" precisa de atenção (${stagnantGoals[0].progress}% de progresso).`
-                  : `${stagnantGoals.length} metas precisam de atenção (menos de 10% de progresso).`
-                }
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-      )}
+       <div className="space-y-2">
+         {/* Mental Load Alert - Priority */}
+         <MentalLoadAlert />
+         
+         {mvdNotStarted && (
+           <Alert className="border-warning/30 bg-warning/5">
+             <AlertCircle className="h-4 w-4 text-warning" />
+             <AlertDescription className="text-sm text-warning">
+               Seu MVD ainda não foi iniciado hoje. Comece com o primeiro item!
+             </AlertDescription>
+           </Alert>
+         )}
+         {stagnantGoals.length > 0 && (
+           <Alert className="border-muted-foreground/30 bg-muted/30">
+             <AlertCircle className="h-4 w-4 text-muted-foreground" />
+             <AlertDescription className="text-sm text-muted-foreground">
+               {stagnantGoals.length === 1 
+                 ? `A meta "${stagnantGoals[0].title}" precisa de atenção (${stagnantGoals[0].progress}% de progresso).`
+                 : `${stagnantGoals.length} metas precisam de atenção (menos de 10% de progresso).`
+               }
+             </AlertDescription>
+           </Alert>
+         )}
+       </div>
 
       {/* Header */}
       <div className="space-y-1">

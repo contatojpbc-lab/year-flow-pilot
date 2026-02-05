@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { Target, Flame, Clock, AlertTriangle, TrendingDown, ArrowUp } from 'lucide-react';
+ import { useMemo } from 'react';
+ import { useMentalLoad } from '@/hooks/useMentalLoad';
+ import { Target, Flame, Clock, AlertTriangle, TrendingDown, ArrowUp, Brain } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -196,9 +197,16 @@ export const DailyPriorities = () => {
     };
     items.push(mvdItem);
 
-    // Sort by priority score (highest first)
-    return items.sort((a, b) => b.priorityScore - a.priorityScore).slice(0, 6);
-  }, [goals, history]);
+     // Sort by priority score (highest first) - limit will be applied after
+     return items.sort((a, b) => b.priorityScore - a.priorityScore);
+   }, [goals, history]);
+ 
+   const mentalLoad = useMentalLoad();
+   
+   // Apply mental load reduction to priorities
+   const displayedPriorities = useMemo(() => {
+     return priorities.slice(0, mentalLoad.maxPrioritiesToShow);
+   }, [priorities, mentalLoad.maxPrioritiesToShow]);
 
   return (
     <Card className="animate-slide-up">
@@ -208,13 +216,26 @@ export const DailyPriorities = () => {
             <ArrowUp className="h-4 w-4 text-primary" />
             Prioridades do Dia
           </CardTitle>
-          <Badge variant="outline" className="text-xs">
-            {priorities.length} itens
-          </Badge>
+           <div className="flex items-center gap-2">
+             {mentalLoad.shouldReduceTasks && (
+               <Badge variant="outline" className="text-xs text-warning border-warning/30 bg-warning/10">
+                 <Brain className="h-3 w-3 mr-1" />
+                 Modo Foco
+               </Badge>
+             )}
+             <Badge variant="outline" className="text-xs">
+               {displayedPriorities.length} itens
+             </Badge>
+           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {priorities.map((item, index) => {
+       <CardContent className="space-y-3">
+         {mentalLoad.shouldReduceTasks && (
+           <div className="text-xs text-muted-foreground bg-muted/30 rounded-md p-2 mb-2">
+             <span className="font-medium">Sugestões reduzidas.</span> Foque apenas nestas prioridades essenciais.
+           </div>
+         )}
+         {displayedPriorities.map((item, index) => {
           const Icon = typeIcons[item.type];
           
           return (
@@ -292,7 +313,7 @@ export const DailyPriorities = () => {
           );
         })}
 
-        {priorities.length === 0 && (
+         {displayedPriorities.length === 0 && (
           <div className="text-center py-6 text-muted-foreground">
             <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">Nenhuma prioridade urgente hoje!</p>
