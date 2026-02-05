@@ -10,6 +10,7 @@ import { WeeklyReviewProvider } from "@/contexts/WeeklyReviewContext";
 import { FinancesProvider } from "@/contexts/FinancesContext";
 import { HistoryProvider } from "@/contexts/HistoryContext";
 import { MonthlyReportProvider } from "@/contexts/MonthlyReportContext";
+ import { ExecutionModeProvider } from "@/contexts/ExecutionModeContext";
 import Dashboard from "./pages/Dashboard";
 import Goals from "./pages/Goals";
 import Routine from "./pages/Routine";
@@ -31,7 +32,8 @@ const App = () => (
           <FinancesProvider>
             <HistoryProvider>
               <MonthlyReportProvider>
-                <TooltipProvider>
+                 <ExecutionModeProvider>
+                   <TooltipProvider>
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
@@ -50,7 +52,8 @@ const App = () => (
                       </Routes>
                     </AppLayout>
                   </BrowserRouter>
-                </TooltipProvider>
+                   </TooltipProvider>
+                 </ExecutionModeProvider>
               </MonthlyReportProvider>
             </HistoryProvider>
           </FinancesProvider>
