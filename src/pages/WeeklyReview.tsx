@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   Star, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, 
   ArrowRight, Calendar, CheckCircle2, Target, Flame, 
-  Sparkles, Save, X, FileText, Activity
+  Sparkles, Save, X, FileText, Activity, Brain
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWeeklyReview } from "@/contexts/WeeklyReviewContext";
 import { MonthlyReportCard } from "@/components/reports/MonthlyReportCard";
 import { EvolutionMetricsPanel, LifeAreaEvolutionCard } from "@/components/history/EvolutionMetrics";
+import { WeeklySelfAnalysis } from "@/components/review/WeeklySelfAnalysis";
 import { HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { mockWeeklyReviews } from "@/data/mockData";
 import { cn } from "@/lib/utils";
@@ -62,10 +63,14 @@ const WeeklyReview = () => {
       </div>
 
       <Tabs defaultValue="weekly" className="space-y-6">
-        <TabsList className="grid w-full max-w-lg grid-cols-3">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
           <TabsTrigger value="weekly" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             Semanal
+          </TabsTrigger>
+          <TabsTrigger value="analysis" className="flex items-center gap-2">
+            <Brain className="h-4 w-4" />
+            Autoanálise
           </TabsTrigger>
           <TabsTrigger value="monthly" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
@@ -483,6 +488,11 @@ const WeeklyReview = () => {
           </div>
           </>
           )}
+        </TabsContent>
+
+        {/* Self-Analysis Tab */}
+        <TabsContent value="analysis" className="space-y-6">
+          <WeeklySelfAnalysis />
         </TabsContent>
 
         {/* Monthly Report Tab */}
