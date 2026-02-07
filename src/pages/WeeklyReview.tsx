@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   Star, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, 
   ArrowRight, Calendar, CheckCircle2, Target, Flame, 
-  Sparkles, Save, X, FileText, Activity, Brain
+  Sparkles, Save, X, FileText, Activity, Brain, AlertTriangle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { useWeeklyReview } from "@/contexts/WeeklyReviewContext";
 import { MonthlyReportCard } from "@/components/reports/MonthlyReportCard";
 import { EvolutionMetricsPanel, LifeAreaEvolutionCard } from "@/components/history/EvolutionMetrics";
 import { WeeklySelfAnalysis } from "@/components/review/WeeklySelfAnalysis";
+import { FailurePatternAnalysis } from "@/components/review/FailurePatternAnalysis";
 import { HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { mockWeeklyReviews } from "@/data/mockData";
 import { cn } from "@/lib/utils";
@@ -63,22 +64,26 @@ const WeeklyReview = () => {
       </div>
 
       <Tabs defaultValue="weekly" className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+        <TabsList className="grid w-full max-w-3xl grid-cols-5">
           <TabsTrigger value="weekly" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Semanal
+            <span className="hidden sm:inline">Semanal</span>
           </TabsTrigger>
           <TabsTrigger value="analysis" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
-            Autoanálise
+            <span className="hidden sm:inline">Autoanálise</span>
+          </TabsTrigger>
+          <TabsTrigger value="patterns" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="hidden sm:inline">Padrões</span>
           </TabsTrigger>
           <TabsTrigger value="monthly" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Mensal
+            <span className="hidden sm:inline">Mensal</span>
           </TabsTrigger>
           <TabsTrigger value="evolution" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
-            Evolução
+            <span className="hidden sm:inline">Evolução</span>
           </TabsTrigger>
         </TabsList>
 
@@ -493,6 +498,11 @@ const WeeklyReview = () => {
         {/* Self-Analysis Tab */}
         <TabsContent value="analysis" className="space-y-6">
           <WeeklySelfAnalysis />
+        </TabsContent>
+
+        {/* Failure Patterns Tab */}
+        <TabsContent value="patterns" className="space-y-6">
+          <FailurePatternAnalysis />
         </TabsContent>
 
         {/* Monthly Report Tab */}
