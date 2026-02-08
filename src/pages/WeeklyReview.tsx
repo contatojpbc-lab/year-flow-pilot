@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   Star, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, 
   ArrowRight, Calendar, CheckCircle2, Target, Flame, 
-  Sparkles, Save, X, FileText, Activity, Brain, AlertTriangle, Compass
+  Sparkles, Save, X, FileText, Activity, Brain, AlertTriangle, Compass, Crown
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { EvolutionMetricsPanel, LifeAreaEvolutionCard } from "@/components/histo
 import { WeeklySelfAnalysis } from "@/components/review/WeeklySelfAnalysis";
 import { FailurePatternAnalysis } from "@/components/review/FailurePatternAnalysis";
 import { StrategicImprovementsPanel } from "@/components/review/StrategicImprovementsPanel";
+import { CEOModePanel } from "@/components/review/CEOModePanel";
 import { HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { mockWeeklyReviews } from "@/data/mockData";
 import { cn } from "@/lib/utils";
@@ -64,8 +65,12 @@ const WeeklyReview = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="weekly" className="space-y-6">
-        <TabsList className="grid w-full max-w-4xl grid-cols-6">
+      <Tabs defaultValue="ceo" className="space-y-6">
+        <TabsList className="grid w-full max-w-5xl grid-cols-7">
+          <TabsTrigger value="ceo" className="flex items-center gap-2">
+            <Crown className="h-4 w-4" />
+            <span className="hidden sm:inline">CEO Mode</span>
+          </TabsTrigger>
           <TabsTrigger value="weekly" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Semanal</span>
@@ -92,7 +97,10 @@ const WeeklyReview = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Weekly Review Tab */}
+        {/* CEO Mode Tab */}
+        <TabsContent value="ceo" className="space-y-6">
+          <CEOModePanel />
+        </TabsContent>
         <TabsContent value="weekly" className="space-y-6">
           {/* Weekly Review Header */}
           {!isReviewMode && (
