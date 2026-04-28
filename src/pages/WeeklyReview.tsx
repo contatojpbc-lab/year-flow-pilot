@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   Star, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, 
   ArrowRight, Calendar, CheckCircle2, Target, Flame, 
-  Sparkles, Save, X, FileText, Activity, Brain, AlertTriangle, Compass, Crown, Eye, Scale
+  Sparkles, Save, X, FileText, Activity, Brain, AlertTriangle, Compass, Crown, Eye, Scale, FlaskConical
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { StrategicImprovementsPanel } from "@/components/review/StrategicImprove
 import { CEOModePanel } from "@/components/review/CEOModePanel";
 import { PredictiveAnalysisPanel } from "@/components/review/PredictiveAnalysisPanel";
 import { DecisionSupportPanel } from "@/components/review/DecisionSupportPanel";
+import { LifeSimulatorPanel } from "@/components/review/LifeSimulatorPanel";
 import { HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { mockWeeklyReviews } from "@/data/mockData";
 import { cn } from "@/lib/utils";
@@ -68,7 +69,7 @@ const WeeklyReview = () => {
       </div>
 
       <Tabs defaultValue="ceo" className="space-y-6">
-        <TabsList className="grid w-full max-w-6xl grid-cols-9">
+        <TabsList className="grid w-full max-w-6xl grid-cols-10">
           <TabsTrigger value="ceo" className="flex items-center gap-2">
             <Crown className="h-4 w-4" />
             <span className="hidden sm:inline">CEO Mode</span>
@@ -80,6 +81,10 @@ const WeeklyReview = () => {
           <TabsTrigger value="decisions" className="flex items-center gap-2">
             <Scale className="h-4 w-4" />
             <span className="hidden sm:inline">Decisões</span>
+          </TabsTrigger>
+          <TabsTrigger value="simulator" className="flex items-center gap-2">
+            <FlaskConical className="h-4 w-4" />
+            <span className="hidden sm:inline">Simulador</span>
           </TabsTrigger>
           <TabsTrigger value="weekly" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
@@ -120,6 +125,11 @@ const WeeklyReview = () => {
         {/* Decision Support Tab */}
         <TabsContent value="decisions" className="space-y-6">
           <DecisionSupportPanel />
+        </TabsContent>
+
+        {/* Life Simulator Tab */}
+        <TabsContent value="simulator" className="space-y-6">
+          <LifeSimulatorPanel />
         </TabsContent>
         <TabsContent value="weekly" className="space-y-6">
           {/* Weekly Review Header */}
