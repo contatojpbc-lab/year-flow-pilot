@@ -116,6 +116,11 @@ const WeeklyReview = () => {
         <TabsContent value="predictive" className="space-y-6">
           <PredictiveAnalysisPanel />
         </TabsContent>
+
+        {/* Decision Support Tab */}
+        <TabsContent value="decisions" className="space-y-6">
+          <DecisionSupportPanel />
+        </TabsContent>
         <TabsContent value="weekly" className="space-y-6">
           {/* Weekly Review Header */}
           {!isReviewMode && (
