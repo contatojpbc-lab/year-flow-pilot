@@ -18,6 +18,7 @@ import { FailurePatternAnalysis } from "@/components/review/FailurePatternAnalys
 import { StrategicImprovementsPanel } from "@/components/review/StrategicImprovementsPanel";
 import { CEOModePanel } from "@/components/review/CEOModePanel";
 import { PredictiveAnalysisPanel } from "@/components/review/PredictiveAnalysisPanel";
+import { DecisionSupportPanel } from "@/components/review/DecisionSupportPanel";
 import { HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { mockWeeklyReviews } from "@/data/mockData";
 import { cn } from "@/lib/utils";
