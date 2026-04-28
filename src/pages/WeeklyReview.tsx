@@ -126,6 +126,11 @@ const WeeklyReview = () => {
         <TabsContent value="decisions" className="space-y-6">
           <DecisionSupportPanel />
         </TabsContent>
+
+        {/* Life Simulator Tab */}
+        <TabsContent value="simulator" className="space-y-6">
+          <LifeSimulatorPanel />
+        </TabsContent>
         <TabsContent value="weekly" className="space-y-6">
           {/* Weekly Review Header */}
           {!isReviewMode && (
