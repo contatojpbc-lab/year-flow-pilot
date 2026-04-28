@@ -19,6 +19,7 @@ import { StrategicImprovementsPanel } from "@/components/review/StrategicImprove
 import { CEOModePanel } from "@/components/review/CEOModePanel";
 import { PredictiveAnalysisPanel } from "@/components/review/PredictiveAnalysisPanel";
 import { DecisionSupportPanel } from "@/components/review/DecisionSupportPanel";
+import { LifeSimulatorPanel } from "@/components/review/LifeSimulatorPanel";
 import { HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { mockWeeklyReviews } from "@/data/mockData";
 import { cn } from "@/lib/utils";
