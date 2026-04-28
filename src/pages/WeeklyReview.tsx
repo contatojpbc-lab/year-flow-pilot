@@ -69,7 +69,7 @@ const WeeklyReview = () => {
       </div>
 
       <Tabs defaultValue="ceo" className="space-y-6">
-        <TabsList className="grid w-full max-w-6xl grid-cols-9">
+        <TabsList className="grid w-full max-w-6xl grid-cols-10">
           <TabsTrigger value="ceo" className="flex items-center gap-2">
             <Crown className="h-4 w-4" />
             <span className="hidden sm:inline">CEO Mode</span>
@@ -81,6 +81,10 @@ const WeeklyReview = () => {
           <TabsTrigger value="decisions" className="flex items-center gap-2">
             <Scale className="h-4 w-4" />
             <span className="hidden sm:inline">Decisões</span>
+          </TabsTrigger>
+          <TabsTrigger value="simulator" className="flex items-center gap-2">
+            <FlaskConical className="h-4 w-4" />
+            <span className="hidden sm:inline">Simulador</span>
           </TabsTrigger>
           <TabsTrigger value="weekly" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
