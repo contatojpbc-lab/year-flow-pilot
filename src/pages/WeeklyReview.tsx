@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   Star, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, 
   ArrowRight, Calendar, CheckCircle2, Target, Flame, 
-  Sparkles, Save, X, FileText, Activity, Brain, AlertTriangle, Compass, Crown, Eye, Scale, FlaskConical, Bot
+  Sparkles, Save, X, FileText, Activity, Brain, AlertTriangle, Compass, Crown, Eye, Scale, FlaskConical, Bot, Map
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { PredictiveAnalysisPanel } from "@/components/review/PredictiveAnalysisP
 import { DecisionSupportPanel } from "@/components/review/DecisionSupportPanel";
 import { LifeSimulatorPanel } from "@/components/review/LifeSimulatorPanel";
 import { AICopilotPanel } from "@/components/review/AICopilotPanel";
+import { LifeRoadmapPanel } from "@/components/review/LifeRoadmapPanel";
 import { HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { mockWeeklyReviews } from "@/data/mockData";
 import { cn } from "@/lib/utils";
@@ -70,10 +71,14 @@ const WeeklyReview = () => {
       </div>
 
       <Tabs defaultValue="copilot" className="space-y-6">
-        <TabsList className="grid w-full max-w-6xl grid-cols-11">
+        <TabsList className="grid w-full max-w-6xl grid-cols-12">
           <TabsTrigger value="copilot" className="flex items-center gap-2">
             <Bot className="h-4 w-4" />
             <span className="hidden sm:inline">Copiloto</span>
+          </TabsTrigger>
+          <TabsTrigger value="roadmap" className="flex items-center gap-2">
+            <Map className="h-4 w-4" />
+            <span className="hidden sm:inline">Roadmap</span>
           </TabsTrigger>
           <TabsTrigger value="ceo" className="flex items-center gap-2">
             <Crown className="h-4 w-4" />
@@ -120,6 +125,11 @@ const WeeklyReview = () => {
         {/* AI Copilot Tab */}
         <TabsContent value="copilot" className="space-y-6">
           <AICopilotPanel />
+        </TabsContent>
+
+        {/* Life Roadmap Tab */}
+        <TabsContent value="roadmap" className="space-y-6">
+          <LifeRoadmapPanel />
         </TabsContent>
 
         {/* CEO Mode Tab */}
