@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   Star, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, 
   ArrowRight, Calendar, CheckCircle2, Target, Flame, 
-  Sparkles, Save, X, FileText, Activity, Brain, AlertTriangle, Compass, Crown, Eye, Scale, FlaskConical
+  Sparkles, Save, X, FileText, Activity, Brain, AlertTriangle, Compass, Crown, Eye, Scale, FlaskConical, Bot
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { CEOModePanel } from "@/components/review/CEOModePanel";
 import { PredictiveAnalysisPanel } from "@/components/review/PredictiveAnalysisPanel";
 import { DecisionSupportPanel } from "@/components/review/DecisionSupportPanel";
 import { LifeSimulatorPanel } from "@/components/review/LifeSimulatorPanel";
+import { AICopilotPanel } from "@/components/review/AICopilotPanel";
 import { HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { mockWeeklyReviews } from "@/data/mockData";
 import { cn } from "@/lib/utils";
@@ -68,8 +69,12 @@ const WeeklyReview = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="ceo" className="space-y-6">
-        <TabsList className="grid w-full max-w-6xl grid-cols-10">
+      <Tabs defaultValue="copilot" className="space-y-6">
+        <TabsList className="grid w-full max-w-6xl grid-cols-11">
+          <TabsTrigger value="copilot" className="flex items-center gap-2">
+            <Bot className="h-4 w-4" />
+            <span className="hidden sm:inline">Copiloto</span>
+          </TabsTrigger>
           <TabsTrigger value="ceo" className="flex items-center gap-2">
             <Crown className="h-4 w-4" />
             <span className="hidden sm:inline">CEO Mode</span>
@@ -111,6 +116,11 @@ const WeeklyReview = () => {
             <span className="hidden sm:inline">Evolução</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* AI Copilot Tab */}
+        <TabsContent value="copilot" className="space-y-6">
+          <AICopilotPanel />
+        </TabsContent>
 
         {/* CEO Mode Tab */}
         <TabsContent value="ceo" className="space-y-6">
