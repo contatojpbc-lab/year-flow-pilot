@@ -1,10 +1,24 @@
-import { User, Palette, Bell, Database, Shield, LogOut } from "lucide-react";
+import { User, Palette, Bell, Database, LogOut } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { mockLifeAreas } from "@/data/mockData";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth", { replace: true });
+  };
+
+  const displayName = profile?.display_name || user?.email?.split("@")[0] || "Usuário";
+  const email = user?.email || "";
+  const initial = displayName.charAt(0).toUpperCase();
+
   return (
     <div className="space-y-6 animate-fade-in max-w-3xl">
       {/* Header */}
@@ -25,11 +39,11 @@ const Settings = () => {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">
-              J
+              {initial}
             </div>
             <div>
-              <p className="font-medium text-foreground">John Doe</p>
-              <p className="text-sm text-muted-foreground">john@example.com</p>
+              <p className="font-medium text-foreground">{displayName}</p>
+              <p className="text-sm text-muted-foreground">{email}</p>
             </div>
           </div>
           <Button variant="outline" size="sm">Edit Profile</Button>
@@ -123,7 +137,7 @@ const Settings = () => {
       {/* Sign Out */}
       <Card className="border-destructive/30">
         <CardContent className="p-4">
-          <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+          <Button onClick={handleSignOut} variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
           </Button>
