@@ -18,17 +18,17 @@ import { ConsistencyMetricsCard, MVDCompletionMetricsCard, RoutineGoalsCorrelati
  import { LightModeView } from "@/components/dashboard/LightModeView";
 import { useGoals } from "@/contexts/GoalsContext";
 import { useMVD } from "@/contexts/MVDContext";
+import { useLifeAreas } from "@/contexts/LifeAreasContext";
+import { useFinances } from "@/contexts/FinancesContext";
  import { useExecutionMode } from "@/contexts/ExecutionModeContext";
 import { cn } from "@/lib/utils";
-import {
-  mockDashboardStats, 
-  mockLifeAreas, 
-  mockFinancialPlan 
-} from "@/data/mockData";
+import { mockDashboardStats } from "@/data/mockData";
 
 const Dashboard = () => {
   const { goals } = useGoals();
   const { items, completedItems, allCompleted, currentStreak, longestStreak } = useMVD();
+  const { lifeAreas } = useLifeAreas();
+  const { plan } = useFinances();
    const { isLightMode } = useExecutionMode();
   const stats = mockDashboardStats;
   const [showCelebration, setShowCelebration] = useState(false);
@@ -185,12 +185,12 @@ const Dashboard = () => {
           {/* Daily Priorities - Main Focus */}
           <DailyPriorities />
            <SmartRecommendations />
-          <GoalsOverview goals={goals} lifeAreas={mockLifeAreas} />
+          <GoalsOverview goals={goals} lifeAreas={lifeAreas} />
         </div>
 
         {/* Right Column - Finances, Trends & Insights */}
         <div className="space-y-6">
-          <FinanceSnapshot plan={mockFinancialPlan} />
+          <FinanceSnapshot plan={plan} />
           <LifeAreaTrendsCard />
            <RoutineGoalsCorrelationCard />
           <HistoryInsightsCard maxInsights={3} />

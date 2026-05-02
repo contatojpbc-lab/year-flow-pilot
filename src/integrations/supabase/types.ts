@@ -14,6 +14,175 @@ export type Database = {
   }
   public: {
     Tables: {
+      expense_categories: {
+        Row: {
+          color: string
+          created_at: string
+          financial_plan_id: string
+          id: string
+          name: string
+          planned_amount: number
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          financial_plan_id: string
+          id?: string
+          name: string
+          planned_amount?: number
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          financial_plan_id?: string
+          id?: string
+          name?: string
+          planned_amount?: number
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_financial_plan_id_fkey"
+            columns: ["financial_plan_id"]
+            isOneToOne: false
+            referencedRelation: "financial_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_goals: {
+        Row: {
+          created_at: string
+          current_amount: number
+          deadline: string | null
+          expected_return_rate: number | null
+          id: string
+          monthly_contribution: number
+          target_amount: number
+          title: string
+          type: Database["public"]["Enums"]["financial_goal_type"]
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          current_amount?: number
+          deadline?: string | null
+          expected_return_rate?: number | null
+          id?: string
+          monthly_contribution?: number
+          target_amount?: number
+          title: string
+          type?: Database["public"]["Enums"]["financial_goal_type"]
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          created_at?: string
+          current_amount?: number
+          deadline?: string | null
+          expected_return_rate?: number | null
+          id?: string
+          monthly_contribution?: number
+          target_amount?: number
+          title?: string
+          type?: Database["public"]["Enums"]["financial_goal_type"]
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      financial_plans: {
+        Row: {
+          actual_income: number
+          created_at: string
+          id: string
+          month: number
+          planned_income: number
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          actual_income?: number
+          created_at?: string
+          id?: string
+          month: number
+          planned_income?: number
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          actual_income?: number
+          created_at?: string
+          id?: string
+          month?: number
+          planned_income?: number
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      goal_contributions: {
+        Row: {
+          amount: number
+          contribution_date: string
+          created_at: string
+          goal_id: string
+          id: string
+          notes: string | null
+          type: Database["public"]["Enums"]["contribution_type"]
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          amount: number
+          contribution_date?: string
+          created_at?: string
+          goal_id: string
+          id?: string
+          notes?: string | null
+          type?: Database["public"]["Enums"]["contribution_type"]
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          amount?: number
+          contribution_date?: string
+          created_at?: string
+          goal_id?: string
+          id?: string
+          notes?: string | null
+          type?: Database["public"]["Enums"]["contribution_type"]
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_contributions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "financial_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goals: {
         Row: {
           achievable: string
@@ -206,6 +375,147 @@ export type Database = {
           },
         ]
       }
+      monthly_snapshots: {
+        Row: {
+          created_at: string
+          finances_budget_adherence: number
+          finances_savings_rate: number
+          finances_total_spent: number
+          goals_active_count: number
+          goals_average_progress: number
+          goals_completed_count: number
+          habits_consistency_rate: number
+          habits_total_completed: number
+          id: string
+          life_areas_breakdown: Json
+          month: number
+          mvd_completed_days: number
+          mvd_completion_rate: number
+          mvd_longest_streak: number
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          finances_budget_adherence?: number
+          finances_savings_rate?: number
+          finances_total_spent?: number
+          goals_active_count?: number
+          goals_average_progress?: number
+          goals_completed_count?: number
+          habits_consistency_rate?: number
+          habits_total_completed?: number
+          id?: string
+          life_areas_breakdown?: Json
+          month: number
+          mvd_completed_days?: number
+          mvd_completion_rate?: number
+          mvd_longest_streak?: number
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          finances_budget_adherence?: number
+          finances_savings_rate?: number
+          finances_total_spent?: number
+          goals_active_count?: number
+          goals_average_progress?: number
+          goals_completed_count?: number
+          habits_consistency_rate?: number
+          habits_total_completed?: number
+          id?: string
+          life_areas_breakdown?: Json
+          month?: number
+          mvd_completed_days?: number
+          mvd_completion_rate?: number
+          mvd_longest_streak?: number
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      mvd_check_ins: {
+        Row: {
+          check_in_date: string
+          completed_item_ids: string[]
+          created_at: string
+          energy_level: number | null
+          id: string
+          mood: number | null
+          mvd_completed: boolean
+          notes: string | null
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          check_in_date: string
+          completed_item_ids?: string[]
+          created_at?: string
+          energy_level?: number | null
+          id?: string
+          mood?: number | null
+          mvd_completed?: boolean
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          check_in_date?: string
+          completed_item_ids?: string[]
+          created_at?: string
+          energy_level?: number | null
+          id?: string
+          mood?: number | null
+          mvd_completed?: boolean
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      mvd_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -283,6 +593,66 @@ export type Database = {
           },
         ]
       }
+      transactions: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          description: string
+          financial_plan_id: string | null
+          id: string
+          is_recurring: boolean
+          transaction_date: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          financial_plan_id?: string | null
+          id?: string
+          is_recurring?: boolean
+          transaction_date?: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          financial_plan_id?: string | null
+          id?: string
+          is_recurring?: boolean
+          transaction_date?: string
+          type?: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_financial_plan_id_fkey"
+            columns: ["financial_plan_id"]
+            isOneToOne: false
+            referencedRelation: "financial_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -319,8 +689,11 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      contribution_type: "manual" | "scheduled" | "investment_return"
+      financial_goal_type: "savings" | "investment" | "debt_payoff" | "purchase"
       goal_status: "planned" | "active" | "completed" | "paused"
       time_of_day: "morning" | "afternoon" | "evening" | "anytime"
+      transaction_type: "income" | "expense"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -449,8 +822,11 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      contribution_type: ["manual", "scheduled", "investment_return"],
+      financial_goal_type: ["savings", "investment", "debt_payoff", "purchase"],
       goal_status: ["planned", "active", "completed", "paused"],
       time_of_day: ["morning", "afternoon", "evening", "anytime"],
+      transaction_type: ["income", "expense"],
     },
   },
 } as const
