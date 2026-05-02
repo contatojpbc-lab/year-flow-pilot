@@ -128,7 +128,7 @@ const Routine = () => {
       {/* Routine Items */}
       <div className="space-y-3">
         {filteredRoutines.map((item) => {
-          const isCompleted = completedItems.includes(item.id);
+          const isCompleted = todayCompletedIds.includes(item.id);
           const TimeIcon = timeOfDayIcons[item.timeOfDay];
           const linkedGoal = item.linkedGoalId ? getGoalTitle(item.linkedGoalId) : null;
           const linkedGoalProgress = item.linkedGoalId ? getGoalProgress(item.linkedGoalId) : null;
