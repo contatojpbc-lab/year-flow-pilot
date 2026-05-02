@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockLifeAreas, mockRoutineItems } from "@/data/mockData";
 import { useGoals } from "@/contexts/GoalsContext";
+import { useLifeAreas } from "@/contexts/LifeAreasContext";
+import { useRoutine } from "@/contexts/RoutineContext";
 import { AnnualProgressChart, MonthComparisonCard } from "@/components/history/HistoryComponents";
 import { GoalHealthAnalysisPanel } from "@/components/goals/GoalHealthAnalysis";
 import { GoalStatus } from "@/types";
@@ -22,15 +23,17 @@ const statusColors: Record<GoalStatus, string> = {
 const Goals = () => {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const { goals } = useGoals();
+  const { lifeAreas, getLifeAreaById } = useLifeAreas();
+  const { routineItems } = useRoutine();
 
   const filteredGoals = selectedArea 
     ? goals.filter(g => g.lifeAreaId === selectedArea)
     : goals;
 
-  const getLifeArea = (id: string) => mockLifeAreas.find(area => area.id === id);
+  const getLifeArea = (id: string) => getLifeAreaById(id);
   
   const getLinkedHabitsCount = (goalId: string) => 
-    mockRoutineItems.filter(r => r.linkedGoalId === goalId).length;
+    routineItems.filter(r => r.linkedGoalId === goalId).length;
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', { 
@@ -76,7 +79,7 @@ const Goals = () => {
             >
               All Areas
             </Button>
-            {mockLifeAreas.map((area) => (
+            {lifeAreas.map((area) => (
               <Button
                 key={area.id}
                 variant={selectedArea === area.id ? "default" : "outline"}

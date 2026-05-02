@@ -6,7 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { LifeAreasProvider } from "@/contexts/LifeAreasContext";
 import { GoalsProvider } from "@/contexts/GoalsContext";
+import { RoutineProvider } from "@/contexts/RoutineContext";
 import { MVDProvider } from "@/contexts/MVDContext";
 import { WeeklyReviewProvider } from "@/contexts/WeeklyReviewContext";
 import { FinancesProvider } from "@/contexts/FinancesContext";
@@ -29,7 +31,9 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const ProtectedApp = () => (
-  <GoalsProvider>
+  <LifeAreasProvider>
+    <GoalsProvider>
+    <RoutineProvider>
     <MVDProvider>
       <WeeklyReviewProvider>
         <FinancesProvider>
@@ -56,7 +60,9 @@ const ProtectedApp = () => (
         </FinancesProvider>
       </WeeklyReviewProvider>
     </MVDProvider>
-  </GoalsProvider>
+    </RoutineProvider>
+    </GoalsProvider>
+  </LifeAreasProvider>
 );
 
 const App = () => (
