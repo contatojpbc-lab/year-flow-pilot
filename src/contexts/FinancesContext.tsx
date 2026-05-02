@@ -1,27 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import { FinancialPlan, ExpenseCategory, Transaction, FinancialGoal, GoalContribution } from '@/types';
-import { mockFinancialPlan, mockTransactions } from '@/data/mockData';
-
-/**
- * ============================================
- * FINANCES CONTEXT - DATA MANAGEMENT
- * ============================================
- * 
- * BUSINESS RULES:
- * 1. User defines total monthly income (RendaMensal)
- * 2. User creates expense categories with planned budget (CategoriaGasto)
- * 3. User records daily expenses (Gasto)
- * 4. Each expense automatically impacts category's actualAmount
- * 5. System shows planned vs actual comparison
- * 6. Automatic insights generated based on spending patterns
- * 
- * ENTITIES MANAGED:
- * - RendaMensal: plannedIncome / actualIncome in FinancialPlan
- * - CategoriaGasto: ExpenseCategory[]
- * - Gasto: Transaction[]
- * - MetaFinanceira: FinancialGoal[]
- * - Investimento: (future implementation)
- */
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface CategoryInsight {
   categoryId: string;
@@ -37,531 +17,461 @@ export interface FinanceInsight {
 }
 
 interface FinancesContextType {
-  // State
   plan: FinancialPlan;
   transactions: Transaction[];
   financialGoals: FinancialGoal[];
-  
-  // Income operations
-  updatePlannedIncome: (amount: number) => void;
-  updateActualIncome: (amount: number) => void;
-  
-  // Category operations
-  addCategory: (category: Omit<ExpenseCategory, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt' | 'financialPlanId' | 'actualAmount'>) => void;
-  updateCategory: (categoryId: string, updates: Partial<ExpenseCategory>) => void;
-  deleteCategory: (categoryId: string) => void;
-  
-  // Transaction operations
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt'>) => void;
-  updateTransaction: (transactionId: string, updates: Partial<Transaction>) => void;
-  deleteTransaction: (transactionId: string) => void;
-  
-  // Financial goals operations
-  addFinancialGoal: (goal: Omit<FinancialGoal, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt' | 'contributions'>) => void;
-  updateFinancialGoal: (goalId: string, updates: Partial<FinancialGoal>) => void;
-  deleteFinancialGoal: (goalId: string) => void;
-  addContribution: (goalId: string, amount: number, type?: GoalContribution['type'], notes?: string) => void;
-  simulateInvestmentReturn: (goalId: string) => void;
-  
-  // Computed goal values
+  loading: boolean;
+  refresh: () => Promise<void>;
+
+  updatePlannedIncome: (amount: number) => Promise<void>;
+  updateActualIncome: (amount: number) => Promise<void>;
+
+  addCategory: (category: Omit<ExpenseCategory, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt' | 'financialPlanId' | 'actualAmount'>) => Promise<void>;
+  updateCategory: (categoryId: string, updates: Partial<ExpenseCategory>) => Promise<void>;
+  deleteCategory: (categoryId: string) => Promise<void>;
+
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateTransaction: (transactionId: string, updates: Partial<Transaction>) => Promise<void>;
+  deleteTransaction: (transactionId: string) => Promise<void>;
+
+  addFinancialGoal: (goal: Omit<FinancialGoal, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt' | 'contributions'>) => Promise<void>;
+  updateFinancialGoal: (goalId: string, updates: Partial<FinancialGoal>) => Promise<void>;
+  deleteFinancialGoal: (goalId: string) => Promise<void>;
+  addContribution: (goalId: string, amount: number, type?: GoalContribution['type'], notes?: string) => Promise<void>;
+  simulateInvestmentReturn: (goalId: string) => Promise<void>;
+
   totalMonthlyAllocated: number;
   totalGoalProgress: number;
-  
-  // Computed values
   totalPlanned: number;
   totalActual: number;
   remaining: number;
   availableBalance: number;
   savingsRate: number;
   budgetUsedPercent: number;
-  
-  // Insights
+
   criticalCategories: CategoryInsight[];
   insights: FinanceInsight[];
 }
 
 const FinancesContext = createContext<FinancesContextType | null>(null);
 
+const now = new Date();
+const currentYear = now.getFullYear();
+const currentMonth = now.getMonth() + 1;
+
+function emptyPlan(userId: string): FinancialPlan {
+  return {
+    id: '',
+    userId,
+    year: currentYear,
+    month: currentMonth,
+    plannedIncome: 0,
+    actualIncome: 0,
+    categories: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function mapTransaction(row: any): Transaction {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    year: row.year,
+    date: new Date(row.transaction_date),
+    amount: Number(row.amount),
+    type: row.type,
+    categoryId: row.category_id ?? undefined,
+    description: row.description ?? '',
+    isRecurring: row.is_recurring,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+  };
+}
+
+function mapGoal(row: any, contributions: GoalContribution[]): FinancialGoal {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    year: row.year,
+    title: row.title,
+    targetAmount: Number(row.target_amount),
+    currentAmount: Number(row.current_amount),
+    monthlyContribution: Number(row.monthly_contribution),
+    deadline: row.deadline ? new Date(row.deadline) : new Date(),
+    type: row.type,
+    expectedReturnRate: row.expected_return_rate != null ? Number(row.expected_return_rate) : undefined,
+    contributions,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+  };
+}
+
+function mapContribution(row: any): GoalContribution {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    year: row.year,
+    goalId: row.goal_id,
+    amount: Number(row.amount),
+    date: new Date(row.contribution_date),
+    type: row.type,
+    notes: row.notes ?? undefined,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+  };
+}
+
 export function FinancesProvider({ children }: { children: React.ReactNode }) {
-  const now = new Date();
-  const userId = 'user-1';
-  const year = 2026;
+  const { user } = useAuth();
+  const [plan, setPlan] = useState<FinancialPlan>(emptyPlan(''));
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Initialize from mock data
-  const [plan, setPlan] = useState<FinancialPlan>(() => {
-    const stored = localStorage.getItem('finances-plan');
-    return stored ? JSON.parse(stored) : mockFinancialPlan;
-  });
+  // Ensure a financial plan exists for the current month
+  const ensurePlan = useCallback(async (): Promise<string | null> => {
+    if (!user) return null;
+    const { data: existing } = await supabase
+      .from('financial_plans')
+      .select('*')
+      .eq('year', currentYear)
+      .eq('month', currentMonth)
+      .maybeSingle();
+    if (existing) return existing.id;
+    const { data: created, error } = await supabase
+      .from('financial_plans')
+      .insert({
+        user_id: user.id,
+        year: currentYear,
+        month: currentMonth,
+        planned_income: 0,
+        actual_income: 0,
+      })
+      .select('*')
+      .single();
+    if (error) return null;
+    return created.id;
+  }, [user]);
 
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const stored = localStorage.getItem('finances-transactions');
-    return stored ? JSON.parse(stored) : mockTransactions;
-  });
+  const refresh = useCallback(async () => {
+    if (!user) {
+      setPlan(emptyPlan(''));
+      setTransactions([]);
+      setFinancialGoals([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const planId = await ensurePlan();
+    if (!planId) { setLoading(false); return; }
 
-  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>(() => {
-    const stored = localStorage.getItem('finances-goals');
-    return stored ? JSON.parse(stored) : [];
-  });
+    const [{ data: planRow }, { data: cats }, { data: txs }, { data: goals }, { data: contribs }] = await Promise.all([
+      supabase.from('financial_plans').select('*').eq('id', planId).single(),
+      supabase.from('expense_categories').select('*').eq('financial_plan_id', planId).order('created_at', { ascending: true }),
+      supabase.from('transactions').select('*').eq('financial_plan_id', planId).order('transaction_date', { ascending: false }),
+      supabase.from('financial_goals').select('*').order('created_at', { ascending: true }),
+      supabase.from('goal_contributions').select('*').order('contribution_date', { ascending: false }),
+    ]);
 
-  // Persist to localStorage
-  const persistPlan = useCallback((newPlan: FinancialPlan) => {
-    setPlan(newPlan);
-    localStorage.setItem('finances-plan', JSON.stringify(newPlan));
-  }, []);
+    const txList = (txs ?? []).map(mapTransaction);
+    setTransactions(txList);
 
-  const persistTransactions = useCallback((newTransactions: Transaction[]) => {
-    setTransactions(newTransactions);
-    localStorage.setItem('finances-transactions', JSON.stringify(newTransactions));
-  }, []);
-
-  const persistFinancialGoals = useCallback((newGoals: FinancialGoal[]) => {
-    setFinancialGoals(newGoals);
-    localStorage.setItem('finances-goals', JSON.stringify(newGoals));
-  }, []);
-
-  // ============================================
-  // INCOME OPERATIONS
-  // ============================================
-
-  const updatePlannedIncome = useCallback((amount: number) => {
-    const updated = { ...plan, plannedIncome: amount, updatedAt: new Date() };
-    persistPlan(updated);
-  }, [plan, persistPlan]);
-
-  const updateActualIncome = useCallback((amount: number) => {
-    const updated = { ...plan, actualIncome: amount, updatedAt: new Date() };
-    persistPlan(updated);
-  }, [plan, persistPlan]);
-
-  // ============================================
-  // CATEGORY OPERATIONS
-  // ============================================
-
-  const addCategory = useCallback((categoryData: Omit<ExpenseCategory, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt' | 'financialPlanId' | 'actualAmount'>) => {
-    const newCategory: ExpenseCategory = {
-      ...categoryData,
-      id: `cat-${Date.now()}`,
-      userId,
-      year,
-      financialPlanId: plan.id,
-      actualAmount: 0,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const updated = {
-      ...plan,
-      categories: [...plan.categories, newCategory],
-      updatedAt: now,
-    };
-    persistPlan(updated);
-  }, [plan, persistPlan, now, userId, year]);
-
-  const updateCategory = useCallback((categoryId: string, updates: Partial<ExpenseCategory>) => {
-    const updated = {
-      ...plan,
-      categories: plan.categories.map(cat =>
-        cat.id === categoryId ? { ...cat, ...updates, updatedAt: now } : cat
-      ),
-      updatedAt: now,
-    };
-    persistPlan(updated);
-  }, [plan, persistPlan, now]);
-
-  const deleteCategory = useCallback((categoryId: string) => {
-    const updated = {
-      ...plan,
-      categories: plan.categories.filter(cat => cat.id !== categoryId),
-      updatedAt: now,
-    };
-    persistPlan(updated);
-    // Also remove transactions linked to this category
-    const updatedTransactions = transactions.filter(tx => tx.categoryId !== categoryId);
-    persistTransactions(updatedTransactions);
-  }, [plan, transactions, persistPlan, persistTransactions, now]);
-
-  // ============================================
-  // TRANSACTION OPERATIONS
-  // ============================================
-
-  /**
-   * Add a new transaction.
-   * RULE: Each expense automatically updates the category's actualAmount
-   */
-  const addTransaction = useCallback((transactionData: Omit<Transaction, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt'>) => {
-    const newTransaction: Transaction = {
-      ...transactionData,
-      id: `tx-${Date.now()}`,
-      userId,
-      year,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    // Update transactions
-    const updatedTransactions = [newTransaction, ...transactions];
-    persistTransactions(updatedTransactions);
-
-    // If it's an expense with a category, update the category's actualAmount
-    if (transactionData.type === 'expense' && transactionData.categoryId) {
-      const updatedPlan = {
-        ...plan,
-        categories: plan.categories.map(cat => {
-          if (cat.id === transactionData.categoryId) {
-            return {
-              ...cat,
-              actualAmount: cat.actualAmount + transactionData.amount,
-              updatedAt: now,
-            };
-          }
-          return cat;
-        }),
-        updatedAt: now,
+    // Compute actualAmount per category from transactions
+    const categories: ExpenseCategory[] = (cats ?? []).map((c: any) => {
+      const actual = txList
+        .filter(t => t.type === 'expense' && t.categoryId === c.id)
+        .reduce((sum, t) => sum + t.amount, 0);
+      return {
+        id: c.id,
+        userId: c.user_id,
+        year: c.year,
+        financialPlanId: c.financial_plan_id,
+        name: c.name,
+        plannedAmount: Number(c.planned_amount),
+        actualAmount: actual,
+        color: c.color,
+        createdAt: new Date(c.created_at),
+        updatedAt: new Date(c.updated_at),
       };
-      persistPlan(updatedPlan);
-    }
-
-    // If it's income, update actualIncome
-    if (transactionData.type === 'income') {
-      const updatedPlan = {
-        ...plan,
-        actualIncome: plan.actualIncome + transactionData.amount,
-        updatedAt: now,
-      };
-      persistPlan(updatedPlan);
-    }
-  }, [transactions, plan, persistTransactions, persistPlan, now, userId, year]);
-
-  const updateTransaction = useCallback((transactionId: string, updates: Partial<Transaction>) => {
-    const oldTransaction = transactions.find(tx => tx.id === transactionId);
-    if (!oldTransaction) return;
-
-    const updatedTransactions = transactions.map(tx =>
-      tx.id === transactionId ? { ...tx, ...updates, updatedAt: now } : tx
-    );
-    persistTransactions(updatedTransactions);
-
-    // Recalculate category amounts if category or amount changed
-    if (oldTransaction.type === 'expense' && oldTransaction.categoryId) {
-      // Subtract old amount from old category
-      let updatedCategories = plan.categories.map(cat => {
-        if (cat.id === oldTransaction.categoryId) {
-          return { ...cat, actualAmount: cat.actualAmount - oldTransaction.amount };
-        }
-        return cat;
-      });
-
-      // Add new amount to new/same category
-      const newCategoryId = updates.categoryId ?? oldTransaction.categoryId;
-      const newAmount = updates.amount ?? oldTransaction.amount;
-      updatedCategories = updatedCategories.map(cat => {
-        if (cat.id === newCategoryId) {
-          return { ...cat, actualAmount: cat.actualAmount + newAmount, updatedAt: now };
-        }
-        return cat;
-      });
-
-      persistPlan({ ...plan, categories: updatedCategories, updatedAt: now });
-    }
-  }, [transactions, plan, persistTransactions, persistPlan, now]);
-
-  const deleteTransaction = useCallback((transactionId: string) => {
-    const transaction = transactions.find(tx => tx.id === transactionId);
-    if (!transaction) return;
-
-    const updatedTransactions = transactions.filter(tx => tx.id !== transactionId);
-    persistTransactions(updatedTransactions);
-
-    // If expense, subtract from category
-    if (transaction.type === 'expense' && transaction.categoryId) {
-      const updatedPlan = {
-        ...plan,
-        categories: plan.categories.map(cat => {
-          if (cat.id === transaction.categoryId) {
-            return {
-              ...cat,
-              actualAmount: Math.max(0, cat.actualAmount - transaction.amount),
-              updatedAt: now,
-            };
-          }
-          return cat;
-        }),
-        updatedAt: now,
-      };
-      persistPlan(updatedPlan);
-    }
-
-    // If income, subtract from actualIncome
-    if (transaction.type === 'income') {
-      const updatedPlan = {
-        ...plan,
-        actualIncome: Math.max(0, plan.actualIncome - transaction.amount),
-        updatedAt: now,
-      };
-      persistPlan(updatedPlan);
-    }
-  }, [transactions, plan, persistTransactions, persistPlan, now]);
-
-  // ============================================
-  // FINANCIAL GOALS OPERATIONS
-  // ============================================
-
-  const addFinancialGoal = useCallback((goalData: Omit<FinancialGoal, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt' | 'contributions'>) => {
-    const newGoal: FinancialGoal = {
-      ...goalData,
-      id: `goal-${Date.now()}`,
-      userId,
-      year,
-      contributions: [],
-      createdAt: now,
-      updatedAt: now,
-    };
-    persistFinancialGoals([...financialGoals, newGoal]);
-  }, [financialGoals, persistFinancialGoals, now, userId, year]);
-
-  const updateFinancialGoal = useCallback((goalId: string, updates: Partial<FinancialGoal>) => {
-    const updated = financialGoals.map(goal =>
-      goal.id === goalId ? { ...goal, ...updates, updatedAt: now } : goal
-    );
-    persistFinancialGoals(updated);
-  }, [financialGoals, persistFinancialGoals, now]);
-
-  const deleteFinancialGoal = useCallback((goalId: string) => {
-    persistFinancialGoals(financialGoals.filter(goal => goal.id !== goalId));
-  }, [financialGoals, persistFinancialGoals]);
-
-  /**
-   * Add a contribution to a financial goal
-   * Updates the goal's currentAmount automatically
-   */
-  const addContribution = useCallback((goalId: string, amount: number, type: GoalContribution['type'] = 'manual', notes?: string) => {
-    const newContribution: GoalContribution = {
-      id: `contrib-${Date.now()}`,
-      userId,
-      year,
-      goalId,
-      amount,
-      date: now,
-      type,
-      notes,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    const updated = financialGoals.map(goal => {
-      if (goal.id === goalId) {
-        return {
-          ...goal,
-          currentAmount: goal.currentAmount + amount,
-          contributions: [...goal.contributions, newContribution],
-          updatedAt: now,
-        };
-      }
-      return goal;
     });
-    persistFinancialGoals(updated);
-  }, [financialGoals, persistFinancialGoals, now, userId, year]);
 
-  /**
-   * Simulate investment return based on expectedReturnRate
-   * Calculates monthly return (annual rate / 12)
-   */
-  const simulateInvestmentReturn = useCallback((goalId: string) => {
+    // actualIncome = sum of income transactions (overrides planned actual_income field)
+    const actualIncome = txList.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+
+    setPlan({
+      id: planRow.id,
+      userId: planRow.user_id,
+      year: planRow.year,
+      month: planRow.month,
+      plannedIncome: Number(planRow.planned_income),
+      actualIncome: actualIncome > 0 ? actualIncome : Number(planRow.actual_income),
+      categories,
+      createdAt: new Date(planRow.created_at),
+      updatedAt: new Date(planRow.updated_at),
+    });
+
+    const contribsByGoal = new Map<string, GoalContribution[]>();
+    (contribs ?? []).forEach((c: any) => {
+      const m = mapContribution(c);
+      const arr = contribsByGoal.get(m.goalId) ?? [];
+      arr.push(m);
+      contribsByGoal.set(m.goalId, arr);
+    });
+    setFinancialGoals((goals ?? []).map((g: any) => mapGoal(g, contribsByGoal.get(g.id) ?? [])));
+    setLoading(false);
+  }, [user, ensurePlan]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  // ============== INCOME ==============
+  const updatePlannedIncome = useCallback(async (amount: number) => {
+    if (!plan.id) return;
+    await supabase.from('financial_plans').update({ planned_income: amount }).eq('id', plan.id);
+    await refresh();
+  }, [plan.id, refresh]);
+
+  const updateActualIncome = useCallback(async (amount: number) => {
+    if (!plan.id) return;
+    await supabase.from('financial_plans').update({ actual_income: amount }).eq('id', plan.id);
+    await refresh();
+  }, [plan.id, refresh]);
+
+  // ============== CATEGORIES ==============
+  const addCategory = useCallback(async (data: any) => {
+    if (!user || !plan.id) return;
+    await supabase.from('expense_categories').insert({
+      user_id: user.id,
+      financial_plan_id: plan.id,
+      name: data.name,
+      planned_amount: data.plannedAmount,
+      color: data.color,
+    });
+    await refresh();
+  }, [user, plan.id, refresh]);
+
+  const updateCategory = useCallback(async (categoryId: string, updates: Partial<ExpenseCategory>) => {
+    const payload: any = {};
+    if (updates.name !== undefined) payload.name = updates.name;
+    if (updates.plannedAmount !== undefined) payload.planned_amount = updates.plannedAmount;
+    if (updates.color !== undefined) payload.color = updates.color;
+    if (Object.keys(payload).length === 0) return;
+    await supabase.from('expense_categories').update(payload).eq('id', categoryId);
+    await refresh();
+  }, [refresh]);
+
+  const deleteCategory = useCallback(async (categoryId: string) => {
+    // Transactions referencing this category will have category_id set to null (FK on delete set null)
+    await supabase.from('expense_categories').delete().eq('id', categoryId);
+    await refresh();
+  }, [refresh]);
+
+  // ============== TRANSACTIONS ==============
+  const addTransaction = useCallback(async (data: Omit<Transaction, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt'>) => {
+    if (!user || !plan.id) return;
+    await supabase.from('transactions').insert({
+      user_id: user.id,
+      financial_plan_id: plan.id,
+      transaction_date: data.date.toISOString().slice(0, 10),
+      amount: data.amount,
+      type: data.type,
+      category_id: data.categoryId ?? null,
+      description: data.description,
+      is_recurring: data.isRecurring,
+    });
+    await refresh();
+  }, [user, plan.id, refresh]);
+
+  const updateTransaction = useCallback(async (transactionId: string, updates: Partial<Transaction>) => {
+    const payload: any = {};
+    if (updates.amount !== undefined) payload.amount = updates.amount;
+    if (updates.type !== undefined) payload.type = updates.type;
+    if (updates.categoryId !== undefined) payload.category_id = updates.categoryId ?? null;
+    if (updates.description !== undefined) payload.description = updates.description;
+    if (updates.date !== undefined) payload.transaction_date = updates.date.toISOString().slice(0, 10);
+    if (updates.isRecurring !== undefined) payload.is_recurring = updates.isRecurring;
+    if (Object.keys(payload).length === 0) return;
+    await supabase.from('transactions').update(payload).eq('id', transactionId);
+    await refresh();
+  }, [refresh]);
+
+  const deleteTransaction = useCallback(async (transactionId: string) => {
+    await supabase.from('transactions').delete().eq('id', transactionId);
+    await refresh();
+  }, [refresh]);
+
+  // ============== FINANCIAL GOALS ==============
+  const addFinancialGoal = useCallback(async (data: Omit<FinancialGoal, 'id' | 'userId' | 'year' | 'createdAt' | 'updatedAt' | 'contributions'>) => {
+    if (!user) return;
+    await supabase.from('financial_goals').insert({
+      user_id: user.id,
+      title: data.title,
+      type: data.type,
+      target_amount: data.targetAmount,
+      current_amount: data.currentAmount ?? 0,
+      monthly_contribution: data.monthlyContribution ?? 0,
+      deadline: data.deadline?.toISOString() ?? null,
+      expected_return_rate: data.expectedReturnRate ?? null,
+    });
+    await refresh();
+  }, [user, refresh]);
+
+  const updateFinancialGoal = useCallback(async (goalId: string, updates: Partial<FinancialGoal>) => {
+    const payload: any = {};
+    if (updates.title !== undefined) payload.title = updates.title;
+    if (updates.type !== undefined) payload.type = updates.type;
+    if (updates.targetAmount !== undefined) payload.target_amount = updates.targetAmount;
+    if (updates.currentAmount !== undefined) payload.current_amount = updates.currentAmount;
+    if (updates.monthlyContribution !== undefined) payload.monthly_contribution = updates.monthlyContribution;
+    if (updates.deadline !== undefined) payload.deadline = updates.deadline?.toISOString() ?? null;
+    if (updates.expectedReturnRate !== undefined) payload.expected_return_rate = updates.expectedReturnRate ?? null;
+    if (Object.keys(payload).length === 0) return;
+    await supabase.from('financial_goals').update(payload).eq('id', goalId);
+    await refresh();
+  }, [refresh]);
+
+  const deleteFinancialGoal = useCallback(async (goalId: string) => {
+    await supabase.from('financial_goals').delete().eq('id', goalId);
+    await refresh();
+  }, [refresh]);
+
+  const addContribution = useCallback(async (
+    goalId: string,
+    amount: number,
+    type: GoalContribution['type'] = 'manual',
+    notes?: string
+  ) => {
+    if (!user) return;
+    const goal = financialGoals.find(g => g.id === goalId);
+    if (!goal) return;
+    // Insert contribution + bump current_amount in goal
+    await supabase.from('goal_contributions').insert({
+      user_id: user.id,
+      goal_id: goalId,
+      amount,
+      type,
+      notes: notes ?? null,
+      contribution_date: new Date().toISOString(),
+    });
+    await supabase.from('financial_goals')
+      .update({ current_amount: goal.currentAmount + amount })
+      .eq('id', goalId);
+    await refresh();
+  }, [user, financialGoals, refresh]);
+
+  const simulateInvestmentReturn = useCallback(async (goalId: string) => {
     const goal = financialGoals.find(g => g.id === goalId);
     if (!goal || goal.type !== 'investment' || !goal.expectedReturnRate) return;
-
-    // Monthly return = (current amount * annual rate) / 12
     const monthlyReturn = (goal.currentAmount * goal.expectedReturnRate) / 12;
-    
     if (monthlyReturn > 0) {
-      addContribution(goalId, monthlyReturn, 'investment_return', `Monthly return at ${(goal.expectedReturnRate * 100).toFixed(1)}% annual rate`);
+      await addContribution(
+        goalId,
+        monthlyReturn,
+        'investment_return',
+        `Monthly return at ${(goal.expectedReturnRate * 100).toFixed(1)}% annual rate`
+      );
     }
   }, [financialGoals, addContribution]);
 
-  // Total monthly amount allocated to all financial goals
-  const totalMonthlyAllocated = useMemo(() => 
-    financialGoals.reduce((sum, goal) => sum + (goal.monthlyContribution || 0), 0),
+  // ============== COMPUTED ==============
+  const totalMonthlyAllocated = useMemo(
+    () => financialGoals.reduce((sum, g) => sum + (g.monthlyContribution || 0), 0),
     [financialGoals]
   );
-
-  // Average progress across all financial goals
   const totalGoalProgress = useMemo(() => {
     if (financialGoals.length === 0) return 0;
-    const avgProgress = financialGoals.reduce((sum, goal) => {
-      const progress = goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
-      return sum + Math.min(progress, 100);
+    const avg = financialGoals.reduce((sum, g) => {
+      const p = g.targetAmount > 0 ? (g.currentAmount / g.targetAmount) * 100 : 0;
+      return sum + Math.min(p, 100);
     }, 0) / financialGoals.length;
-    return Math.round(avgProgress);
+    return Math.round(avg);
   }, [financialGoals]);
 
-  // ============================================
-  // COMPUTED VALUES
-  // ============================================
-
-  const totalPlanned = useMemo(() => 
-    plan.categories.reduce((sum, cat) => sum + cat.plannedAmount, 0),
+  const totalPlanned = useMemo(
+    () => plan.categories.reduce((s, c) => s + c.plannedAmount, 0),
     [plan.categories]
   );
-
-  const totalActual = useMemo(() => 
-    plan.categories.reduce((sum, cat) => sum + cat.actualAmount, 0),
+  const totalActual = useMemo(
+    () => plan.categories.reduce((s, c) => s + c.actualAmount, 0),
     [plan.categories]
   );
-
-  const remaining = useMemo(() => 
-    totalPlanned - totalActual,
-    [totalPlanned, totalActual]
-  );
-
-  // Available balance = actual income - actual expenses
-  const availableBalance = useMemo(() => 
-    plan.actualIncome - totalActual,
-    [plan.actualIncome, totalActual]
-  );
-
+  const remaining = totalPlanned - totalActual;
+  const availableBalance = plan.actualIncome - totalActual;
   const savingsRate = useMemo(() => {
-    const savingsCategory = plan.categories.find(c => c.name === 'Savings');
-    if (!savingsCategory || plan.actualIncome === 0) return 0;
-    return Math.round((savingsCategory.actualAmount / plan.actualIncome) * 100);
+    const savingsCat = plan.categories.find(c => c.name.toLowerCase().includes('savings') || c.name.toLowerCase().includes('poup'));
+    if (!savingsCat || plan.actualIncome === 0) return 0;
+    return Math.round((savingsCat.actualAmount / plan.actualIncome) * 100);
   }, [plan.categories, plan.actualIncome]);
+  const budgetUsedPercent = totalPlanned === 0 ? 0 : Math.round((totalActual / totalPlanned) * 100);
 
-  const budgetUsedPercent = useMemo(() => {
-    if (totalPlanned === 0) return 0;
-    return Math.round((totalActual / totalPlanned) * 100);
-  }, [totalPlanned, totalActual]);
-
-  // ============================================
-  // INSIGHTS & ALERTS
-  // ============================================
-
-  // Critical categories: over 90% of budget or already exceeded
   const criticalCategories = useMemo<CategoryInsight[]>(() => {
-    return plan.categories
-      .map(cat => {
-        if (cat.plannedAmount === 0) return null;
-        const percentUsed = (cat.actualAmount / cat.plannedAmount) * 100;
-        const percentOver = percentUsed - 100;
-        
-        if (percentUsed >= 90) {
-          return {
-            categoryId: cat.id,
-            categoryName: cat.name,
-            percentOverBudget: Math.max(0, percentOver),
-            isCritical: percentUsed > 100,
-            message: percentUsed > 100 
-              ? `${cat.name} exceeded budget by ${Math.round(percentOver)}%`
-              : `${cat.name} is at ${Math.round(percentUsed)}% of budget`,
-          };
-        }
-        return null;
-      })
-      .filter((item): item is CategoryInsight => item !== null);
+    return plan.categories.map(cat => {
+      if (cat.plannedAmount === 0) return null;
+      const percentUsed = (cat.actualAmount / cat.plannedAmount) * 100;
+      const percentOver = percentUsed - 100;
+      if (percentUsed >= 90) {
+        return {
+          categoryId: cat.id,
+          categoryName: cat.name,
+          percentOverBudget: Math.max(0, percentOver),
+          isCritical: percentUsed > 100,
+          message: percentUsed > 100
+            ? `${cat.name} exceeded budget by ${Math.round(percentOver)}%`
+            : `${cat.name} is at ${Math.round(percentUsed)}% of budget`,
+        };
+      }
+      return null;
+    }).filter((i): i is CategoryInsight => i !== null);
   }, [plan.categories]);
 
-  // Generate automatic insights
   const insights = useMemo<FinanceInsight[]>(() => {
     const result: FinanceInsight[] = [];
-    
-    // Check for over-budget categories
     plan.categories.forEach(cat => {
       if (cat.plannedAmount > 0 && cat.actualAmount > cat.plannedAmount) {
-        const percentOver = Math.round(((cat.actualAmount - cat.plannedAmount) / cat.plannedAmount) * 100);
-        result.push({
-          type: 'warning',
-          message: `You spent ${percentOver}% more on ${cat.name} this month`,
-        });
+        const over = Math.round(((cat.actualAmount - cat.plannedAmount) / cat.plannedAmount) * 100);
+        result.push({ type: 'warning', message: `You spent ${over}% more on ${cat.name} this month` });
       }
     });
-
-    // Check for under-budget categories (positive feedback)
-    const underBudgetCategories = plan.categories.filter(cat => 
-      cat.plannedAmount > 0 && cat.actualAmount < cat.plannedAmount * 0.7 && cat.actualAmount > 0
-    );
-    if (underBudgetCategories.length > 0) {
-      const cat = underBudgetCategories[0];
-      const percentSaved = Math.round(((cat.plannedAmount - cat.actualAmount) / cat.plannedAmount) * 100);
-      result.push({
-        type: 'success',
-        message: `Great job! ${cat.name} is ${percentSaved}% under budget`,
-      });
+    const under = plan.categories.find(c => c.plannedAmount > 0 && c.actualAmount > 0 && c.actualAmount < c.plannedAmount * 0.7);
+    if (under) {
+      const saved = Math.round(((under.plannedAmount - under.actualAmount) / under.plannedAmount) * 100);
+      result.push({ type: 'success', message: `Great job! ${under.name} is ${saved}% under budget` });
     }
-
-    // Overall budget health
     if (budgetUsedPercent > 100) {
-      result.push({
-        type: 'warning',
-        message: `Total spending exceeded budget by ${budgetUsedPercent - 100}%`,
-      });
+      result.push({ type: 'warning', message: `Total spending exceeded budget by ${budgetUsedPercent - 100}%` });
     } else if (budgetUsedPercent >= 90) {
-      result.push({
-        type: 'info',
-        message: `You've used ${budgetUsedPercent}% of your total budget`,
-      });
+      result.push({ type: 'info', message: `You've used ${budgetUsedPercent}% of your total budget` });
     }
-
-    // Savings rate insight
     if (savingsRate > 20) {
-      result.push({
-        type: 'success',
-        message: `Excellent! You're saving ${savingsRate}% of your income`,
-      });
+      result.push({ type: 'success', message: `Excellent! You're saving ${savingsRate}% of your income` });
     } else if (savingsRate < 10 && plan.actualIncome > 0) {
-      result.push({
-        type: 'info',
-        message: `Consider increasing savings (currently ${savingsRate}%)`,
-      });
+      result.push({ type: 'info', message: `Consider increasing savings (currently ${savingsRate}%)` });
     }
-
-    // Available balance insight
     if (availableBalance < 0) {
       result.push({
         type: 'warning',
         message: `You're overspending! ${Math.abs(availableBalance).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })} over income`,
       });
     }
-
     return result;
   }, [plan.categories, budgetUsedPercent, savingsRate, availableBalance, plan.actualIncome]);
 
   const value: FinancesContextType = {
-    plan,
-    transactions,
-    financialGoals,
-    updatePlannedIncome,
-    updateActualIncome,
-    addCategory,
-    updateCategory,
-    deleteCategory,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
-    addFinancialGoal,
-    updateFinancialGoal,
-    deleteFinancialGoal,
-    addContribution,
-    simulateInvestmentReturn,
-    totalPlanned,
-    totalActual,
-    remaining,
-    availableBalance,
-    savingsRate,
-    budgetUsedPercent,
-    totalMonthlyAllocated,
-    totalGoalProgress,
-    criticalCategories,
-    insights,
+    plan, transactions, financialGoals, loading, refresh,
+    updatePlannedIncome, updateActualIncome,
+    addCategory, updateCategory, deleteCategory,
+    addTransaction, updateTransaction, deleteTransaction,
+    addFinancialGoal, updateFinancialGoal, deleteFinancialGoal, addContribution, simulateInvestmentReturn,
+    totalMonthlyAllocated, totalGoalProgress,
+    totalPlanned, totalActual, remaining, availableBalance, savingsRate, budgetUsedPercent,
+    criticalCategories, insights,
   };
 
-  return (
-    <FinancesContext.Provider value={value}>
-      {children}
-    </FinancesContext.Provider>
-  );
+  return <FinancesContext.Provider value={value}>{children}</FinancesContext.Provider>;
 }
 
 export function useFinances() {
-  const context = useContext(FinancesContext);
-  if (!context) {
-    throw new Error('useFinances must be used within a FinancesProvider');
-  }
-  return context;
+  const ctx = useContext(FinancesContext);
+  if (!ctx) throw new Error('useFinances must be used within a FinancesProvider');
+  return ctx;
 }
