@@ -14,6 +14,112 @@ export type Database = {
   }
   public: {
     Tables: {
+      goals: {
+        Row: {
+          achievable: string
+          created_at: string
+          description: string
+          id: string
+          life_area_id: string | null
+          measurable: string
+          progress: number
+          relevant: string
+          specific: string
+          status: Database["public"]["Enums"]["goal_status"]
+          time_bound: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          achievable?: string
+          created_at?: string
+          description?: string
+          id?: string
+          life_area_id?: string | null
+          measurable?: string
+          progress?: number
+          relevant?: string
+          specific?: string
+          status?: Database["public"]["Enums"]["goal_status"]
+          time_bound?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          achievable?: string
+          created_at?: string
+          description?: string
+          id?: string
+          life_area_id?: string | null
+          measurable?: string
+          progress?: number
+          relevant?: string
+          specific?: string
+          status?: Database["public"]["Enums"]["goal_status"]
+          time_bound?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_life_area_id_fkey"
+            columns: ["life_area_id"]
+            isOneToOne: false
+            referencedRelation: "life_areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habit_entries: {
+        Row: {
+          completed: boolean
+          created_at: string
+          entry_date: string
+          id: string
+          notes: string | null
+          routine_item_id: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          entry_date: string
+          id?: string
+          notes?: string | null
+          routine_item_id: string
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          routine_item_id?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_entries_routine_item_id_fkey"
+            columns: ["routine_item_id"]
+            isOneToOne: false
+            referencedRelation: "routine_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       life_areas: {
         Row: {
           color: string
@@ -53,6 +159,53 @@ export type Database = {
         }
         Relationships: []
       }
+      milestones: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          due_date: string | null
+          goal_id: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          goal_id: string
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          goal_id?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -79,6 +232,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      routine_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          linked_goal_id: string | null
+          sort_order: number
+          time_of_day: Database["public"]["Enums"]["time_of_day"]
+          title: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          linked_goal_id?: string | null
+          sort_order?: number
+          time_of_day?: Database["public"]["Enums"]["time_of_day"]
+          title: string
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          linked_goal_id?: string | null
+          sort_order?: number
+          time_of_day?: Database["public"]["Enums"]["time_of_day"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routine_items_linked_goal_id_fkey"
+            columns: ["linked_goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -116,6 +319,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      goal_status: "planned" | "active" | "completed" | "paused"
+      time_of_day: "morning" | "afternoon" | "evening" | "anytime"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -244,6 +449,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      goal_status: ["planned", "active", "completed", "paused"],
+      time_of_day: ["morning", "afternoon", "evening", "anytime"],
     },
   },
 } as const
