@@ -3,8 +3,8 @@ import { CheckCircle2, Circle, Sun, Cloud, Moon, Plus, Flame, Link2 } from "luci
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { mockRoutineItems } from "@/data/mockData";
 import { useGoals } from "@/contexts/GoalsContext";
+import { useRoutine } from "@/contexts/RoutineContext";
 import { useMVD } from "@/contexts/MVDContext";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -17,52 +17,46 @@ const timeOfDayIcons = {
 };
 
 const Routine = () => {
-  const [completedItems, setCompletedItems] = useState<string[]>(['routine-1', 'routine-2']);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const { goals, updateGoalProgress, getProgressPerHabit, getGoalById } = useGoals();
+  const { routineItems, todayCompletedIds, toggleHabitToday } = useRoutine();
   const { currentStreak } = useMVD();
 
-  const toggleItem = useCallback((id: string, linkedGoalId?: string) => {
-    const isCompleting = !completedItems.includes(id);
-    
-    setCompletedItems(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+  const toggleItem = useCallback(async (id: string, linkedGoalId?: string) => {
+    const newCompleted = await toggleHabitToday(id);
 
-    // Update goal progress if habit is linked to a goal
     if (linkedGoalId) {
       const progressDelta = getProgressPerHabit(linkedGoalId);
       const goal = getGoalById(linkedGoalId);
-      
-      if (isCompleting) {
-        updateGoalProgress(linkedGoalId, progressDelta);
+      if (newCompleted) {
+        await updateGoalProgress(linkedGoalId, progressDelta);
         if (goal) {
           toast.success(`+${progressDelta.toFixed(1)}% progress on "${goal.title}"`, {
             description: "Keep building momentum!",
           });
         }
       } else {
-        updateGoalProgress(linkedGoalId, -progressDelta);
+        await updateGoalProgress(linkedGoalId, -progressDelta);
         if (goal) {
           toast.info(`Progress adjusted on "${goal.title}"`, {
             description: "Habit unmarked",
           });
         }
       }
-    } else if (isCompleting) {
+    } else if (newCompleted) {
       toast.success("Habit completed!", {
         description: "Great job keeping your streak!",
       });
     }
-  }, [completedItems, updateGoalProgress, getProgressPerHabit, getGoalById]);
+  }, [toggleHabitToday, updateGoalProgress, getProgressPerHabit, getGoalById]);
 
   const filteredRoutines = selectedTime 
-    ? mockRoutineItems.filter(r => r.timeOfDay === selectedTime)
-    : mockRoutineItems;
+    ? routineItems.filter(r => r.timeOfDay === selectedTime)
+    : routineItems;
 
-  const completedCount = completedItems.length;
-  const totalCount = mockRoutineItems.length;
-  const completionPercent = Math.round((completedCount / totalCount) * 100);
+  const completedCount = todayCompletedIds.length;
+  const totalCount = routineItems.length;
+  const completionPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const getGoalTitle = (id: string) => goals.find(g => g.id === id)?.title;
   const getGoalProgress = (id: string) => goals.find(g => g.id === id)?.progress;
