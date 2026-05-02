@@ -60,7 +60,9 @@ const ProtectedApp = () => (
         </FinancesProvider>
       </WeeklyReviewProvider>
     </MVDProvider>
-  </GoalsProvider>
+    </RoutineProvider>
+    </GoalsProvider>
+  </LifeAreasProvider>
 );
 
 const App = () => (
