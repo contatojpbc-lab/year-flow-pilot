@@ -12,7 +12,7 @@ import {
   FinancesMonthlySnapshot,
   LifeAreaMonthlySnapshot,
 } from '@/types/history';
-import { getMonthName } from '@/data/historyMockData';
+import { getMonthName } from '@/lib/dateUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 

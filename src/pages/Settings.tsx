@@ -2,12 +2,13 @@ import { User, Palette, Bell, Database, LogOut } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { mockLifeAreas } from "@/data/mockData";
+import { useLifeAreas } from "@/contexts/LifeAreasContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
   const { user, profile, signOut } = useAuth();
+  const { lifeAreas } = useLifeAreas();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -61,7 +62,7 @@ const Settings = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {mockLifeAreas.map((area) => (
+            {lifeAreas.map((area) => (
               <div 
                 key={area.id}
                 className="flex items-center justify-between p-3 rounded-lg bg-secondary/30"

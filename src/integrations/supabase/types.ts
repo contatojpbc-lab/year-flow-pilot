@@ -289,6 +289,48 @@ export type Database = {
           },
         ]
       }
+      journal_entries: {
+        Row: {
+          content: string
+          created_at: string
+          entry_date: string
+          id: string
+          linked_goal_ids: string[]
+          mood: number | null
+          tags: string[]
+          title: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          linked_goal_ids?: string[]
+          mood?: number | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          linked_goal_ids?: string[]
+          mood?: number | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       life_areas: {
         Row: {
           color: string
@@ -543,6 +585,54 @@ export type Database = {
         }
         Relationships: []
       }
+      reminders: {
+        Row: {
+          created_at: string
+          description: string | null
+          frequency: Database["public"]["Enums"]["reminder_frequency"]
+          id: string
+          is_active: boolean
+          linked_entity_id: string | null
+          notification_sent: boolean
+          scheduled_date: string
+          title: string
+          type: Database["public"]["Enums"]["reminder_type"]
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          frequency?: Database["public"]["Enums"]["reminder_frequency"]
+          id?: string
+          is_active?: boolean
+          linked_entity_id?: string | null
+          notification_sent?: boolean
+          scheduled_date?: string
+          title: string
+          type?: Database["public"]["Enums"]["reminder_type"]
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          frequency?: Database["public"]["Enums"]["reminder_frequency"]
+          id?: string
+          is_active?: boolean
+          linked_entity_id?: string | null
+          notification_sent?: boolean
+          scheduled_date?: string
+          title?: string
+          type?: Database["public"]["Enums"]["reminder_type"]
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       routine_items: {
         Row: {
           created_at: string
@@ -674,6 +764,57 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_reviews: {
+        Row: {
+          created_at: string
+          goals_reviewed: string[]
+          id: string
+          improvements: string
+          overall_rating: number
+          progress_reflection: string
+          updated_at: string
+          user_id: string
+          week_end_date: string
+          week_number: number
+          week_start_date: string
+          what_didnt_work: string
+          what_worked: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          goals_reviewed?: string[]
+          id?: string
+          improvements?: string
+          overall_rating?: number
+          progress_reflection?: string
+          updated_at?: string
+          user_id: string
+          week_end_date: string
+          week_number: number
+          week_start_date: string
+          what_didnt_work?: string
+          what_worked?: string
+          year?: number
+        }
+        Update: {
+          created_at?: string
+          goals_reviewed?: string[]
+          id?: string
+          improvements?: string
+          overall_rating?: number
+          progress_reflection?: string
+          updated_at?: string
+          user_id?: string
+          week_end_date?: string
+          week_number?: number
+          week_start_date?: string
+          what_didnt_work?: string
+          what_worked?: string
+          year?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -692,6 +833,8 @@ export type Database = {
       contribution_type: "manual" | "scheduled" | "investment_return"
       financial_goal_type: "savings" | "investment" | "debt_payoff" | "purchase"
       goal_status: "planned" | "active" | "completed" | "paused"
+      reminder_frequency: "once" | "daily" | "weekly" | "monthly"
+      reminder_type: "goal" | "routine" | "review" | "custom"
       time_of_day: "morning" | "afternoon" | "evening" | "anytime"
       transaction_type: "income" | "expense"
     }
@@ -825,6 +968,8 @@ export const Constants = {
       contribution_type: ["manual", "scheduled", "investment_return"],
       financial_goal_type: ["savings", "investment", "debt_payoff", "purchase"],
       goal_status: ["planned", "active", "completed", "paused"],
+      reminder_frequency: ["once", "daily", "weekly", "monthly"],
+      reminder_type: ["goal", "routine", "review", "custom"],
       time_of_day: ["morning", "afternoon", "evening", "anytime"],
       transaction_type: ["income", "expense"],
     },

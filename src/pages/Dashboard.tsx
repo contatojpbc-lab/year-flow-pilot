@@ -22,7 +22,6 @@ import { useLifeAreas } from "@/contexts/LifeAreasContext";
 import { useFinances } from "@/contexts/FinancesContext";
  import { useExecutionMode } from "@/contexts/ExecutionModeContext";
 import { cn } from "@/lib/utils";
-import { mockDashboardStats } from "@/data/mockData";
 
 const Dashboard = () => {
   const { goals } = useGoals();
@@ -30,7 +29,8 @@ const Dashboard = () => {
   const { lifeAreas } = useLifeAreas();
   const { plan } = useFinances();
    const { isLightMode } = useExecutionMode();
-  const stats = mockDashboardStats;
+  const completedGoalsCount = goals.filter(g => g.status === 'completed').length;
+  const activeGoalsCount = goals.filter(g => g.status === 'active').length;
   const [showCelebration, setShowCelebration] = useState(false);
 
   // Calculate average progress from context goals
