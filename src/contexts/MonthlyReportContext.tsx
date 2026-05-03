@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useMemo, useCallback } from
 import { useHistory } from './HistoryContext';
 import { useGoals } from './GoalsContext';
 import { useFinances } from './FinancesContext';
-import { getMonthName } from '@/data/historyMockData';
+import { getMonthName } from '@/lib/dateUtils';
 
 // ============================================
 // TYPES
