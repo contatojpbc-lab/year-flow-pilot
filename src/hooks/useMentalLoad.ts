@@ -23,6 +23,7 @@ import { useRoutine } from '@/contexts/RoutineContext';
  export const useMentalLoad = (): MentalLoadState => {
    const { goals } = useGoals();
    const { items: mvdItems, completedItems, allCompleted } = useMVD();
+   const { routineItems } = useRoutine();
  
    return useMemo(() => {
      let score = 0;
