@@ -74,8 +74,8 @@ export interface GoalHealthAnalysis {
   topPriorityAdjustments: AdjustmentRecommendation[];
 }
 
-function calculateGoalHealth(goal: Goal): GoalHealthReport {
-  const lifeArea = mockLifeAreas.find(a => a.id === goal.lifeAreaId);
+function calculateGoalHealth(goal: Goal, lifeAreas: LifeArea[]): GoalHealthReport {
+  const lifeArea = lifeAreas.find(a => a.id === goal.lifeAreaId);
   const now = new Date();
   const deadline = new Date(goal.timeBound);
   const createdAt = new Date(goal.createdAt);
