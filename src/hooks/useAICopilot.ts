@@ -224,7 +224,7 @@ export const useAICopilot = () => {
     const avg = context.avgGoalProgress;
     const topGoals = [...active].sort((a, b) => b.progress - a.progress).slice(0, 2);
     const lagGoals = [...active].sort((a, b) => a.progress - b.progress).slice(0, 2);
-    const topHabits = mockRoutineItems.filter(h => h.isActive).slice(0, 2);
+    const topHabits = routineItems.filter(h => h.isActive).slice(0, 2);
 
     const performanceScore = Math.min(100, Math.round(avg * 0.6 + Math.min(currentStreak, 30) * 1.3));
 
