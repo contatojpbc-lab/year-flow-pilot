@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useGoals } from '@/contexts/GoalsContext';
 import { useMVD } from '@/contexts/MVDContext';
-import { mockRoutineItems, mockLifeAreas } from '@/data/mockData';
+import { useLifeAreas } from '@/contexts/LifeAreasContext';
+import { useRoutine } from '@/contexts/RoutineContext';
 
 export type MessageRole = 'user' | 'copilot';
 
