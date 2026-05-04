@@ -125,6 +125,8 @@ const dailyAdviceBank: DailyAdvice[] = [
 export const useAICopilot = () => {
   const { goals } = useGoals();
   const { currentStreak } = useMVD();
+  const { lifeAreas } = useLifeAreas();
+  const { routineItems } = useRoutine();
 
   const [messages, setMessages] = useState<CopilotMessage[]>(() => {
     try {
@@ -139,12 +141,10 @@ export const useAICopilot = () => {
 
   const [isThinking, setIsThinking] = useState(false);
 
-  // Persist
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
-  // Context computed from real data
   const context = useMemo(() => {
     const active = goals.filter(g => g.status === 'active');
     const avgProgress = active.length > 0
@@ -154,9 +154,10 @@ export const useAICopilot = () => {
       avgGoalProgress: avgProgress,
       mvdStreak: currentStreak,
       activeGoalsCount: active.length,
-      topArea: mockLifeAreas[0]?.name,
+      topArea: lifeAreas[0]?.name,
     };
-  }, [goals, currentStreak]);
+  }, [goals, currentStreak, lifeAreas]);
+
 
   // Greeting on first load
   useEffect(() => {
