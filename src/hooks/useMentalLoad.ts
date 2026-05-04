@@ -136,5 +136,5 @@ import { useRoutine } from '@/contexts/RoutineContext';
        shouldReduceTasks,
        maxPrioritiesToShow,
      };
-   }, [goals, mvdItems, completedItems, allCompleted]);
+   }, [goals, mvdItems, completedItems, allCompleted, routineItems]);
  };
