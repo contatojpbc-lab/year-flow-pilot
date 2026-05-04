@@ -120,10 +120,10 @@ const Dashboard = () => {
          <>
            {/* Stats Grid */}
            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
+         <StatCard
           title="Active Goals"
-          value={stats.activeGoals}
-          subtitle={`${stats.completedGoals} completed this year`}
+          value={activeGoalsCount}
+          subtitle={`${completedGoalsCount} completed this year`}
           icon={Target}
           variant="glow"
         />
