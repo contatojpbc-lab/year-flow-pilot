@@ -1,7 +1,7 @@
- import { useMemo } from 'react';
- import { useGoals } from '@/contexts/GoalsContext';
- import { useMVD } from '@/contexts/MVDContext';
- import { mockRoutineItems } from '@/data/mockData';
+import { useMemo } from 'react';
+import { useGoals } from '@/contexts/GoalsContext';
+import { useMVD } from '@/contexts/MVDContext';
+import { useRoutine } from '@/contexts/RoutineContext';
  
  export interface MentalLoadState {
    score: number; // 0-100, higher = more overloaded
