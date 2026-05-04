@@ -140,7 +140,7 @@ const Dashboard = () => {
         />
         <StatCard
           title="Weekly Reviews"
-          value={stats.weeklyReviewsDone}
+          value={savedReviews.length}
           subtitle="reviews completed"
           icon={Calendar}
         />
