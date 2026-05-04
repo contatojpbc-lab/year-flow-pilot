@@ -339,30 +339,24 @@ function generateRebalanceRecommendations(
 
 export function useGoalHealthAnalysis(): GoalHealthAnalysis {
   const { goals } = useGoals();
+  const { lifeAreas } = useLifeAreas();
   
   return useMemo(() => {
-    // Generate health reports for all active goals
     const activeGoals = goals.filter(g => g.status === 'active');
-    const reports = activeGoals.map(calculateGoalHealth);
+    const reports = activeGoals.map(g => calculateGoalHealth(g, lifeAreas));
     
-    // Count by status
     const healthyGoals = reports.filter(r => r.status === 'healthy').length;
     const atRiskGoals = reports.filter(r => r.status === 'at_risk').length;
     const stuckGoals = reports.filter(r => r.status === 'stuck').length;
     const unrealisticGoals = reports.filter(r => r.status === 'unrealistic').length;
     
-    // Calculate overall health
     const overallHealthScore = reports.length > 0
       ? Math.round(reports.reduce((acc, r) => acc + r.healthScore, 0) / reports.length)
       : 100;
     
-    // Analyze life area balance
-    const lifeAreaBalance = analyzeLifeAreaBalance(goals);
-    
-    // Generate rebalance recommendations
+    const lifeAreaBalance = analyzeLifeAreaBalance(goals, lifeAreas);
     const rebalanceRecommendations = generateRebalanceRecommendations(lifeAreaBalance, reports);
     
-    // Get top priority adjustments across all goals
     const allRecommendations = reports.flatMap(r => 
       r.recommendations.map(rec => ({ ...rec, goalTitle: r.goalTitle }))
     );
@@ -381,5 +375,5 @@ export function useGoalHealthAnalysis(): GoalHealthAnalysis {
       rebalanceRecommendations,
       topPriorityAdjustments,
     };
-  }, [goals]);
+  }, [goals, lifeAreas]);
 }
