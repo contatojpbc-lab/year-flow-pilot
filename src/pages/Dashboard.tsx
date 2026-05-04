@@ -32,6 +32,7 @@ const Dashboard = () => {
    const { isLightMode } = useExecutionMode();
   const { savedReviews } = useWeeklyReview();
   const activeGoalsCount = goals.filter(g => g.status === 'active').length;
+  const completedGoalsCount = goals.filter(g => g.status === 'completed').length;
   const [showCelebration, setShowCelebration] = useState(false);
 
   // Calculate average progress from context goals
