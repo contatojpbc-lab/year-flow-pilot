@@ -88,6 +88,7 @@ export function useWeeklyAnalysis(): WeeklyAnalysis {
   const { goals } = useGoals();
   const { completedItems, items, currentStreak } = useMVD();
   const { history } = useHistory();
+  const { routineItems } = useRoutine();
   
   // Calculate current week number
   const now = new Date();
