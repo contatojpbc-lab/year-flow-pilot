@@ -67,7 +67,7 @@ import { useRoutine } from '@/contexts/RoutineContext';
      }
  
      // Factor 5: Too many habits (weight: 15)
-     const totalHabits = mockRoutineItems.length;
+     const totalHabits = routineItems.length;
      if (totalHabits > 10) {
        score += 15;
        factors.push(`${totalHabits} hábitos diários para manter`);
