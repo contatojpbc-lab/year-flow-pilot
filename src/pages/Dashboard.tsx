@@ -30,7 +30,7 @@ const Dashboard = () => {
   const { lifeAreas } = useLifeAreas();
   const { plan } = useFinances();
    const { isLightMode } = useExecutionMode();
-  const completedGoalsCount = goals.filter(g => g.status === 'completed').length;
+  const { savedReviews } = useWeeklyReview();
   const activeGoalsCount = goals.filter(g => g.status === 'active').length;
   const [showCelebration, setShowCelebration] = useState(false);
 
