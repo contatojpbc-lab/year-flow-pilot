@@ -6,34 +6,30 @@
  import { Progress } from '@/components/ui/progress';
  import { useGoals } from '@/contexts/GoalsContext';
  import { useMVD } from '@/contexts/MVDContext';
+ import { useLifeAreas } from '@/contexts/LifeAreasContext';
  import { useSmartRecommendations } from '@/hooks/useSmartRecommendations';
- import { mockMVDItems, mockLifeAreas } from '@/data/mockData';
  import { cn } from '@/lib/utils';
- 
- // Calculate days until deadline
+
  const daysUntil = (date: Date): number => {
    const now = new Date();
    const target = new Date(date);
    const diffTime = target.getTime() - now.getTime();
    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
  };
- 
+
  export const LightModeView = () => {
    const { goals } = useGoals();
-   const { completedItems, currentStreak, toggleItem } = useMVD();
+   const { items: mvdItems, completedItems, currentStreak, toggleItem } = useMVD();
+   const { lifeAreas } = useLifeAreas();
    const recommendations = useSmartRecommendations();
- 
-   // Get top 3 critical actions
+
    const criticalActions = useMemo(() => {
-     // Get most urgent goals
      const urgentGoals = goals
        .filter(g => g.status === 'active' && daysUntil(g.timeBound) <= 30)
        .sort((a, b) => daysUntil(a.timeBound) - daysUntil(b.timeBound))
        .slice(0, 2);
- 
-     // Combine with top recommendation
+
      const topRec = recommendations[0];
-     
      const actions: Array<{
        id: string;
        title: string;
@@ -41,8 +37,7 @@
        type: 'goal' | 'mvd' | 'recommendation';
        color?: string;
      }> = [];
- 
-     // Add top recommendation
+
      if (topRec) {
        actions.push({
          id: topRec.id,
@@ -51,10 +46,9 @@
          type: 'recommendation',
        });
      }
- 
-     // Add urgent goals
+
      urgentGoals.forEach(goal => {
-       const area = mockLifeAreas.find(a => a.id === goal.lifeAreaId);
+       const area = lifeAreas.find(a => a.id === goal.lifeAreaId);
        actions.push({
          id: goal.id,
          title: goal.title,
@@ -63,20 +57,18 @@
          color: area?.color,
        });
      });
- 
+
      return actions.slice(0, 3);
-   }, [goals, recommendations]);
- 
-   // Pending MVD items
-   const pendingMVD = mockMVDItems.filter(item => !completedItems.includes(item.id));
-   const completedMVD = mockMVDItems.filter(item => completedItems.includes(item.id));
-   const mvdProgress = mockMVDItems.length > 0 
-     ? (completedItems.length / mockMVDItems.length) * 100 
+   }, [goals, recommendations, lifeAreas]);
+
+   const pendingMVD = mvdItems.filter(item => !completedItems.includes(item.id));
+   const completedMVD = mvdItems.filter(item => completedItems.includes(item.id));
+   const mvdProgress = mvdItems.length > 0
+     ? (completedItems.length / mvdItems.length) * 100
      : 0;
- 
+
    return (
      <div className="min-h-[60vh] flex flex-col items-center justify-center py-8 animate-fade-in">
-       {/* Header */}
        <div className="text-center mb-8">
          <div className="flex items-center justify-center gap-2 mb-2">
            <Zap className="h-6 w-6 text-primary" />
@@ -90,9 +82,8 @@
            </Badge>
          )}
        </div>
- 
+
        <div className="w-full max-w-2xl space-y-6 px-4">
-         {/* Critical Actions */}
          <Card className="border-primary/20 bg-primary/5">
            <CardHeader className="pb-2">
              <CardTitle className="text-sm font-medium flex items-center gap-2 text-primary">
@@ -109,11 +100,11 @@
                    index === 0 && "ring-1 ring-primary/30"
                  )}
                >
-                 <div 
+                 <div
                    className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 bg-primary/10"
                    style={action.color ? { backgroundColor: `${action.color}20` } : {}}
                  >
-                   <span 
+                   <span
                      className="text-sm font-bold"
                      style={{ color: action.color || 'hsl(var(--primary))' }}
                    >
@@ -129,24 +120,25 @@
                  </Button>
                </div>
              ))}
+             {criticalActions.length === 0 && (
+               <p className="text-sm text-muted-foreground text-center py-4">
+                 Sem ações críticas no momento.
+               </p>
+             )}
            </CardContent>
          </Card>
- 
-         {/* MVD Checklist - Simplified */}
+
          <Card>
            <CardHeader className="pb-2">
              <div className="flex items-center justify-between">
-               <CardTitle className="text-sm font-medium">
-                 MVD do Dia
-               </CardTitle>
+               <CardTitle className="text-sm font-medium">MVD do Dia</CardTitle>
                <span className="text-xs text-muted-foreground">
-                 {completedItems.length}/{mockMVDItems.length}
+                 {completedItems.length}/{mvdItems.length}
                </span>
              </div>
              <Progress value={mvdProgress} className="h-1.5 mt-2" />
            </CardHeader>
            <CardContent className="space-y-2">
-             {/* Pending items first */}
              {pendingMVD.map(item => (
                <button
                  key={item.id}
@@ -157,8 +149,7 @@
                  <span className="text-sm text-foreground">{item.title}</span>
                </button>
              ))}
-             
-             {/* Completed items */}
+
              {completedMVD.length > 0 && (
                <div className="pt-2 border-t border-border/50">
                  {completedMVD.map(item => (
@@ -173,20 +164,17 @@
                  ))}
                </div>
              )}
- 
-             {mockMVDItems.length === 0 && (
+
+             {mvdItems.length === 0 && (
                <p className="text-sm text-muted-foreground text-center py-4">
                  Nenhum item MVD configurado.
                </p>
              )}
            </CardContent>
          </Card>
- 
-         {/* Motivation Quote */}
+
          <div className="text-center py-6 text-muted-foreground">
-           <p className="text-sm italic">
-             "Progresso, não perfeição."
-           </p>
+           <p className="text-sm italic">"Progresso, não perfeição."</p>
          </div>
        </div>
      </div>
