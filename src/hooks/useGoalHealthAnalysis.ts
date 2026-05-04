@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useGoals } from '@/contexts/GoalsContext';
-import { mockLifeAreas } from '@/data/mockData';
-import { Goal } from '@/types';
+import { useLifeAreas } from '@/contexts/LifeAreasContext';
+import { Goal, LifeArea } from '@/types';
 
 export type GoalHealthStatus = 'healthy' | 'at_risk' | 'stuck' | 'unrealistic';
 
