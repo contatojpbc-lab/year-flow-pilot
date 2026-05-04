@@ -21,6 +21,7 @@ import { useMVD } from "@/contexts/MVDContext";
 import { useLifeAreas } from "@/contexts/LifeAreasContext";
 import { useFinances } from "@/contexts/FinancesContext";
  import { useExecutionMode } from "@/contexts/ExecutionModeContext";
+ import { useWeeklyReview } from "@/contexts/WeeklyReviewContext";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
