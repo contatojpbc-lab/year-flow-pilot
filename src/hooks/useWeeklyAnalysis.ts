@@ -178,13 +178,13 @@ export function useWeeklyAnalysis(): WeeklyAnalysis {
     }
 
     // Find best performing habit
-    const bestHabit = mockRoutineItems.reduce((best, habit) => {
+    const bestHabit = routineItems.reduce((best, habit) => {
       const simScore = 70 + Math.random() * 30;
       if (!best || simScore > best.score) {
         return { habit, score: simScore };
       }
       return best;
-    }, null as { habit: typeof mockRoutineItems[0]; score: number } | null);
+    }, null as { habit: typeof routineItems[0]; score: number } | null);
     
     if (bestHabit && bestHabit.score >= 80) {
       strengths.push({
@@ -237,7 +237,7 @@ export function useWeeklyAnalysis(): WeeklyAnalysis {
     }
 
     // Check for missing habits
-    const lowHabit = mockRoutineItems.find(() => Math.random() < 0.3);
+    const lowHabit = routineItems.find(() => Math.random() < 0.3);
     if (lowHabit) {
       bottlenecks.push({
         id: 'low-habit',
