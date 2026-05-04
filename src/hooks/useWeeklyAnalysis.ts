@@ -347,7 +347,7 @@ export function useWeeklyAnalysis(): WeeklyAnalysis {
       insights: insights.sort((a, b) => a.priority - b.priority).slice(0, 5),
       weekOverWeekComparison,
     };
-  }, [goals, completedItems, items, currentStreak, currentWeekNumber, history]);
+  }, [goals, completedItems, items, currentStreak, currentWeekNumber, history, routineItems]);
 
   return analysis;
 }
