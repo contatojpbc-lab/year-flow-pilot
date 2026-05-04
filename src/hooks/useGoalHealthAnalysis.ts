@@ -239,10 +239,9 @@ function calculateGoalHealth(goal: Goal, lifeAreas: LifeArea[]): GoalHealthRepor
   };
 }
 
-function analyzeLifeAreaBalance(goals: Goal[]): LifeAreaBalance[] {
+function analyzeLifeAreaBalance(goals: Goal[], lifeAreas: LifeArea[]): LifeAreaBalance[] {
   const areaMap = new Map<string, { goals: Goal[]; totalProgress: number }>();
   
-  // Group goals by life area
   goals.forEach(goal => {
     const existing = areaMap.get(goal.lifeAreaId) || { goals: [], totalProgress: 0 };
     existing.goals.push(goal);
@@ -250,15 +249,15 @@ function analyzeLifeAreaBalance(goals: Goal[]): LifeAreaBalance[] {
     areaMap.set(goal.lifeAreaId, existing);
   });
   
-  const avgGoalsPerArea = goals.length / mockLifeAreas.length;
+  const avgGoalsPerArea = lifeAreas.length > 0 ? goals.length / lifeAreas.length : 0;
   
-  return mockLifeAreas.map(area => {
+  return lifeAreas.map(area => {
     const data = areaMap.get(area.id);
     const goalsCount = data?.goals.length || 0;
     const averageProgress = goalsCount > 0 ? (data?.totalProgress || 0) / goalsCount : 0;
     
-    // Simulate effort weight (in real app, based on time spent, habits linked, etc.)
-    const totalEffortWeight = goalsCount * (1 + Math.random() * 0.5);
+    // Effort weight derived from goals count (deterministic)
+    const totalEffortWeight = goalsCount * 1.25;
     
     return {
       lifeAreaId: area.id,
@@ -267,7 +266,7 @@ function analyzeLifeAreaBalance(goals: Goal[]): LifeAreaBalance[] {
       goalsCount,
       averageProgress: Math.round(averageProgress),
       totalEffortWeight: Math.round(totalEffortWeight * 10) / 10,
-      isOverloaded: goalsCount > avgGoalsPerArea * 1.5,
+      isOverloaded: avgGoalsPerArea > 0 && goalsCount > avgGoalsPerArea * 1.5,
       isNeglected: goalsCount === 0 || (goalsCount > 0 && averageProgress < 15),
     };
   });
