@@ -265,7 +265,7 @@ export const useAICopilot = () => {
       mentorMessage,
       performanceScore,
     };
-  }, [goals, currentStreak, context.avgGoalProgress]);
+  }, [goals, currentStreak, context.avgGoalProgress, routineItems]);
 
   const suggestedPrompts = useMemo(() => [
     'Como estou indo nas minhas metas?',
