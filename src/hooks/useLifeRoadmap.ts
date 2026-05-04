@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useGoals } from '@/contexts/GoalsContext';
-import { mockLifeAreas } from '@/data/mockData';
+import { useLifeAreas } from '@/contexts/LifeAreasContext';
 
 export type RoadmapStatus = 'completed' | 'in_progress' | 'planned' | 'at_risk';
 
