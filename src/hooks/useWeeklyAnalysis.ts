@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useGoals } from '@/contexts/GoalsContext';
 import { useMVD } from '@/contexts/MVDContext';
 import { useHistory } from '@/contexts/HistoryContext';
-import { mockRoutineItems } from '@/data/mockData';
+import { useRoutine } from '@/contexts/RoutineContext';
 
 export interface WeeklyPerformance {
   weekNumber: number;
