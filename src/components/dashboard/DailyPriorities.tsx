@@ -1,12 +1,14 @@
- import { useMemo } from 'react';
- import { useMentalLoad } from '@/hooks/useMentalLoad';
- import { Target, Flame, Clock, AlertTriangle, TrendingDown, ArrowUp, Brain } from 'lucide-react';
+import { useMemo } from 'react';
+import { useMentalLoad } from '@/hooks/useMentalLoad';
+import { Target, Flame, Clock, AlertTriangle, TrendingDown, ArrowUp, Brain } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useGoals } from '@/contexts/GoalsContext';
 import { useHistory } from '@/contexts/HistoryContext';
-import { mockLifeAreas, mockRoutineItems, mockMVDItems } from '@/data/mockData';
+import { useLifeAreas } from '@/contexts/LifeAreasContext';
+import { useRoutine } from '@/contexts/RoutineContext';
+import { useMVD } from '@/contexts/MVDContext';
 import { cn } from '@/lib/utils';
 
 // Priority item types
@@ -17,14 +19,13 @@ interface PriorityItem {
   title: string;
   subtitle?: string;
   type: PriorityType;
-  priorityScore: number; // 0-100, higher = more urgent
+  priorityScore: number;
   reasons: string[];
   lifeAreaColor?: string;
   progress?: number;
   urgencyLevel: 'critical' | 'high' | 'medium' | 'low';
 }
 
-// Calculate days until deadline
 const daysUntil = (date: Date): number => {
   const now = new Date();
   const target = new Date(date);
@@ -32,7 +33,6 @@ const daysUntil = (date: Date): number => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-// Get urgency multiplier based on deadline proximity
 const getUrgencyMultiplier = (daysRemaining: number): number => {
   if (daysRemaining <= 7) return 1.5;
   if (daysRemaining <= 30) return 1.3;
@@ -40,7 +40,6 @@ const getUrgencyMultiplier = (daysRemaining: number): number => {
   return 1.0;
 };
 
-// Get urgency level label
 const getUrgencyLevel = (score: number): PriorityItem['urgencyLevel'] => {
   if (score >= 80) return 'critical';
   if (score >= 60) return 'high';
@@ -64,46 +63,37 @@ const typeIcons: Record<PriorityType, React.ElementType> = {
 
 export const DailyPriorities = () => {
   const { goals } = useGoals();
-  const { history, insights } = useHistory();
+  const { history } = useHistory();
+  const { lifeAreas } = useLifeAreas();
+  const { routineItems } = useRoutine();
+  const { items: mvdItems } = useMVD();
 
   const priorities = useMemo((): PriorityItem[] => {
     const items: PriorityItem[] = [];
     const currentMonth = new Date().getMonth() + 1;
 
-    // 1. Goals with low progress and upcoming deadlines
+    // 1. Goals
     goals.forEach(goal => {
       const daysRemaining = daysUntil(goal.timeBound);
-      const area = mockLifeAreas.find(a => a.id === goal.lifeAreaId);
-      
+      const area = lifeAreas.find(a => a.id === goal.lifeAreaId);
       if (daysRemaining <= 0 || goal.status !== 'active') return;
 
-      // Calculate expected progress based on time elapsed
       const totalDays = daysUntil(goal.timeBound) + (365 - daysRemaining);
       const elapsedRatio = 1 - (daysRemaining / totalDays);
       const expectedProgress = elapsedRatio * 100;
       const progressGap = expectedProgress - goal.progress;
 
-      // Score calculation:
-      // - Higher gap = higher priority
-      // - Closer deadline = higher priority
-      // - Lower current progress = higher priority
       const urgencyMultiplier = getUrgencyMultiplier(daysRemaining);
       const gapScore = Math.max(0, progressGap) * 0.5;
       const lowProgressBonus = goal.progress < 30 ? 15 : 0;
-      
+
       let score = (gapScore + lowProgressBonus) * urgencyMultiplier;
       score = Math.min(100, Math.max(0, score));
 
       const reasons: string[] = [];
-      if (progressGap > 10) {
-        reasons.push(`${Math.round(progressGap)}% abaixo do esperado`);
-      }
-      if (daysRemaining <= 30) {
-        reasons.push(`${daysRemaining} dias restantes`);
-      }
-      if (goal.progress < 20) {
-        reasons.push('Baixo progresso');
-      }
+      if (progressGap > 10) reasons.push(`${Math.round(progressGap)}% abaixo do esperado`);
+      if (daysRemaining <= 30) reasons.push(`${daysRemaining} dias restantes`);
+      if (goal.progress < 20) reasons.push('Baixo progresso');
 
       if (score > 20 || daysRemaining <= 30) {
         items.push({
@@ -122,13 +112,12 @@ export const DailyPriorities = () => {
 
     // 2. Habits linked to priority goals
     const priorityGoalIds = items.filter(i => i.type === 'goal').map(i => i.id);
-    mockRoutineItems.forEach(habit => {
+    routineItems.forEach(habit => {
       if (habit.linkedGoalId && priorityGoalIds.includes(habit.linkedGoalId)) {
         const linkedGoal = goals.find(g => g.id === habit.linkedGoalId);
-        const area = linkedGoal ? mockLifeAreas.find(a => a.id === linkedGoal.lifeAreaId) : null;
-        
+        const area = linkedGoal ? lifeAreas.find(a => a.id === linkedGoal.lifeAreaId) : null;
         const baseScore = items.find(i => i.id === habit.linkedGoalId)?.priorityScore || 50;
-        const score = baseScore * 0.9; // Slightly lower than the goal itself
+        const score = baseScore * 0.9;
 
         items.push({
           id: habit.id,
@@ -143,10 +132,9 @@ export const DailyPriorities = () => {
       }
     });
 
-    // 3. Life areas with stagnation or decline
+    // 3. Life areas with stagnation/decline
     if (history) {
       const lifeAreaScores = new Map<string, number[]>();
-      
       history.lifeAreas.forEach(snapshot => {
         if (snapshot.month >= currentMonth - 2) {
           const scores = lifeAreaScores.get(snapshot.lifeAreaId) || [];
@@ -157,15 +145,12 @@ export const DailyPriorities = () => {
 
       lifeAreaScores.forEach((scores, areaId) => {
         if (scores.length < 2) return;
-        
         const trend = scores[scores.length - 1] - scores[0];
         const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
-        const area = mockLifeAreas.find(a => a.id === areaId);
+        const area = lifeAreas.find(a => a.id === areaId);
 
-        // Flag areas that are declining or stagnant with low scores
         if (trend < -5 || (avgScore < 60 && Math.abs(trend) < 3)) {
           const declineScore = trend < -5 ? 70 + Math.abs(trend) : 55;
-          
           items.push({
             id: areaId,
             title: area?.name || 'Área',
@@ -173,9 +158,9 @@ export const DailyPriorities = () => {
             type: 'life_area',
             priorityScore: declineScore,
             reasons: [
-              trend < -5 
+              trend < -5
                 ? `Queda de ${Math.abs(trend).toFixed(0)}% nos últimos meses`
-                : `Média de ${avgScore.toFixed(0)}% nos últimos meses`
+                : `Média de ${avgScore.toFixed(0)}% nos últimos meses`,
             ],
             lifeAreaColor: area?.color,
             progress: avgScore,
@@ -185,28 +170,27 @@ export const DailyPriorities = () => {
       });
     }
 
-    // 4. MVD items (always important for daily consistency)
-    const mvdItem: PriorityItem = {
-      id: 'mvd-daily',
-      title: 'Concluir MVD do dia',
-      subtitle: `${mockMVDItems.length} itens essenciais`,
-      type: 'mvd',
-      priorityScore: 45, // Base priority, consistent importance
-      reasons: ['Mantém o streak ativo', 'Fundação do dia'],
-      urgencyLevel: 'medium',
-    };
-    items.push(mvdItem);
+    // 4. MVD
+    if (mvdItems.length > 0) {
+      items.push({
+        id: 'mvd-daily',
+        title: 'Concluir MVD do dia',
+        subtitle: `${mvdItems.length} itens essenciais`,
+        type: 'mvd',
+        priorityScore: 45,
+        reasons: ['Mantém o streak ativo', 'Fundação do dia'],
+        urgencyLevel: 'medium',
+      });
+    }
 
-     // Sort by priority score (highest first) - limit will be applied after
-     return items.sort((a, b) => b.priorityScore - a.priorityScore);
-   }, [goals, history]);
- 
-   const mentalLoad = useMentalLoad();
-   
-   // Apply mental load reduction to priorities
-   const displayedPriorities = useMemo(() => {
-     return priorities.slice(0, mentalLoad.maxPrioritiesToShow);
-   }, [priorities, mentalLoad.maxPrioritiesToShow]);
+    return items.sort((a, b) => b.priorityScore - a.priorityScore);
+  }, [goals, history, lifeAreas, routineItems, mvdItems]);
+
+  const mentalLoad = useMentalLoad();
+
+  const displayedPriorities = useMemo(() => {
+    return priorities.slice(0, mentalLoad.maxPrioritiesToShow);
+  }, [priorities, mentalLoad.maxPrioritiesToShow]);
 
   return (
     <Card className="animate-slide-up">
@@ -216,28 +200,27 @@ export const DailyPriorities = () => {
             <ArrowUp className="h-4 w-4 text-primary" />
             Prioridades do Dia
           </CardTitle>
-           <div className="flex items-center gap-2">
-             {mentalLoad.shouldReduceTasks && (
-               <Badge variant="outline" className="text-xs text-warning border-warning/30 bg-warning/10">
-                 <Brain className="h-3 w-3 mr-1" />
-                 Modo Foco
-               </Badge>
-             )}
-             <Badge variant="outline" className="text-xs">
-               {displayedPriorities.length} itens
-             </Badge>
-           </div>
+          <div className="flex items-center gap-2">
+            {mentalLoad.shouldReduceTasks && (
+              <Badge variant="outline" className="text-xs text-warning border-warning/30 bg-warning/10">
+                <Brain className="h-3 w-3 mr-1" />
+                Modo Foco
+              </Badge>
+            )}
+            <Badge variant="outline" className="text-xs">
+              {displayedPriorities.length} itens
+            </Badge>
+          </div>
         </div>
       </CardHeader>
-       <CardContent className="space-y-3">
-         {mentalLoad.shouldReduceTasks && (
-           <div className="text-xs text-muted-foreground bg-muted/30 rounded-md p-2 mb-2">
-             <span className="font-medium">Sugestões reduzidas.</span> Foque apenas nestas prioridades essenciais.
-           </div>
-         )}
-         {displayedPriorities.map((item, index) => {
+      <CardContent className="space-y-3">
+        {mentalLoad.shouldReduceTasks && (
+          <div className="text-xs text-muted-foreground bg-muted/30 rounded-md p-2 mb-2">
+            <span className="font-medium">Sugestões reduzidas.</span> Foque apenas nestas prioridades essenciais.
+          </div>
+        )}
+        {displayedPriorities.map((item, index) => {
           const Icon = typeIcons[item.type];
-          
           return (
             <div
               key={item.id}
@@ -247,39 +230,35 @@ export const DailyPriorities = () => {
                 index === 0 && "ring-1 ring-primary/20 bg-primary/5"
               )}
             >
-              <div 
+              <div
                 className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
-                style={{ 
-                  backgroundColor: item.lifeAreaColor 
-                    ? `${item.lifeAreaColor.replace(')', ' / 0.15)')}` 
-                    : 'hsl(var(--muted))' 
+                style={{
+                  backgroundColor: item.lifeAreaColor
+                    ? `${item.lifeAreaColor.replace(')', ' / 0.15)')}`
+                    : 'hsl(var(--muted))',
                 }}
               >
-                <Icon 
-                  className="h-4 w-4" 
+                <Icon
+                  className="h-4 w-4"
                   style={{ color: item.lifeAreaColor || 'hsl(var(--muted-foreground))' }}
                 />
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm text-foreground truncate">
-                    {item.title}
-                  </span>
-                  <Badge 
-                    variant="outline" 
+                  <span className="font-medium text-sm text-foreground truncate">{item.title}</span>
+                  <Badge
+                    variant="outline"
                     className={cn("text-[10px] px-1.5 py-0", urgencyColors[item.urgencyLevel])}
                   >
-                    {item.urgencyLevel === 'critical' ? 'Crítico' : 
-                     item.urgencyLevel === 'high' ? 'Alto' : 
+                    {item.urgencyLevel === 'critical' ? 'Crítico' :
+                     item.urgencyLevel === 'high' ? 'Alto' :
                      item.urgencyLevel === 'medium' ? 'Médio' : 'Baixo'}
                   </Badge>
                 </div>
-                
+
                 {item.subtitle && (
-                  <p className="text-xs text-muted-foreground mb-1.5">
-                    {item.subtitle}
-                  </p>
+                  <p className="text-xs text-muted-foreground mb-1.5">{item.subtitle}</p>
                 )}
 
                 {item.progress !== undefined && (
@@ -293,7 +272,7 @@ export const DailyPriorities = () => {
 
                 <div className="flex flex-wrap gap-1">
                   {item.reasons.map((reason, i) => (
-                    <span 
+                    <span
                       key={i}
                       className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded"
                     >
@@ -313,7 +292,7 @@ export const DailyPriorities = () => {
           );
         })}
 
-         {displayedPriorities.length === 0 && (
+        {displayedPriorities.length === 0 && (
           <div className="text-center py-6 text-muted-foreground">
             <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">Nenhuma prioridade urgente hoje!</p>

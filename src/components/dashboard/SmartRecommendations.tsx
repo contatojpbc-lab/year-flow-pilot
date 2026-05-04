@@ -3,7 +3,7 @@
  import { Badge } from '@/components/ui/badge';
  import { Button } from '@/components/ui/button';
  import { useSmartRecommendations, RecommendationType, typeLabels } from '@/hooks/useSmartRecommendations';
- import { mockLifeAreas } from '@/data/mockData';
+ import { useLifeAreas } from '@/contexts/LifeAreasContext';
  import { cn } from '@/lib/utils';
  
  const typeIcons: Record<RecommendationType, React.ElementType> = {
@@ -29,6 +29,7 @@
  
  export const SmartRecommendations = () => {
    const recommendations = useSmartRecommendations();
+   const { lifeAreas } = useLifeAreas();
  
    return (
      <Card className="animate-slide-up">
@@ -42,9 +43,9 @@
          {recommendations.map((rec, index) => {
            const Icon = typeIcons[rec.type];
            const area = rec.linkedAreaId 
-             ? mockLifeAreas.find(a => a.id === rec.linkedAreaId)
+             ? lifeAreas.find(a => a.id === rec.linkedAreaId)
              : null;
- 
+
            return (
              <div
                key={rec.id}

@@ -1,7 +1,7 @@
- import { useMemo } from 'react';
- import { useGoals } from '@/contexts/GoalsContext';
- import { useMVD } from '@/contexts/MVDContext';
- import { mockRoutineItems } from '@/data/mockData';
+import { useMemo } from 'react';
+import { useGoals } from '@/contexts/GoalsContext';
+import { useMVD } from '@/contexts/MVDContext';
+import { useRoutine } from '@/contexts/RoutineContext';
  
  export interface MentalLoadState {
    score: number; // 0-100, higher = more overloaded
@@ -23,6 +23,7 @@
  export const useMentalLoad = (): MentalLoadState => {
    const { goals } = useGoals();
    const { items: mvdItems, completedItems, allCompleted } = useMVD();
+   const { routineItems } = useRoutine();
  
    return useMemo(() => {
      let score = 0;
@@ -66,7 +67,7 @@
      }
  
      // Factor 5: Too many habits (weight: 15)
-     const totalHabits = mockRoutineItems.length;
+     const totalHabits = routineItems.length;
      if (totalHabits > 10) {
        score += 15;
        factors.push(`${totalHabits} hábitos diários para manter`);
@@ -135,5 +136,5 @@
        shouldReduceTasks,
        maxPrioritiesToShow,
      };
-   }, [goals, mvdItems, completedItems, allCompleted]);
+   }, [goals, mvdItems, completedItems, allCompleted, routineItems]);
  };

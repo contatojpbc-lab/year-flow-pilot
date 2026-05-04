@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useGoals } from '@/contexts/GoalsContext';
 import { useMVD } from '@/contexts/MVDContext';
 import { useHistory } from '@/contexts/HistoryContext';
-import { mockRoutineItems } from '@/data/mockData';
+import { useRoutine } from '@/contexts/RoutineContext';
 
 export interface WeeklyPerformance {
   weekNumber: number;
@@ -88,6 +88,7 @@ export function useWeeklyAnalysis(): WeeklyAnalysis {
   const { goals } = useGoals();
   const { completedItems, items, currentStreak } = useMVD();
   const { history } = useHistory();
+  const { routineItems } = useRoutine();
   
   // Calculate current week number
   const now = new Date();
@@ -177,13 +178,13 @@ export function useWeeklyAnalysis(): WeeklyAnalysis {
     }
 
     // Find best performing habit
-    const bestHabit = mockRoutineItems.reduce((best, habit) => {
+    const bestHabit = routineItems.reduce((best, habit) => {
       const simScore = 70 + Math.random() * 30;
       if (!best || simScore > best.score) {
         return { habit, score: simScore };
       }
       return best;
-    }, null as { habit: typeof mockRoutineItems[0]; score: number } | null);
+    }, null as { habit: typeof routineItems[0]; score: number } | null);
     
     if (bestHabit && bestHabit.score >= 80) {
       strengths.push({
@@ -236,7 +237,7 @@ export function useWeeklyAnalysis(): WeeklyAnalysis {
     }
 
     // Check for missing habits
-    const lowHabit = mockRoutineItems.find(() => Math.random() < 0.3);
+    const lowHabit = routineItems.find(() => Math.random() < 0.3);
     if (lowHabit) {
       bottlenecks.push({
         id: 'low-habit',
@@ -346,7 +347,7 @@ export function useWeeklyAnalysis(): WeeklyAnalysis {
       insights: insights.sort((a, b) => a.priority - b.priority).slice(0, 5),
       weekOverWeekComparison,
     };
-  }, [goals, completedItems, items, currentStreak, currentWeekNumber, history]);
+  }, [goals, completedItems, items, currentStreak, currentWeekNumber, history, routineItems]);
 
   return analysis;
 }

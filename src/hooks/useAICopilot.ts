@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useGoals } from '@/contexts/GoalsContext';
 import { useMVD } from '@/contexts/MVDContext';
-import { mockRoutineItems, mockLifeAreas } from '@/data/mockData';
+import { useLifeAreas } from '@/contexts/LifeAreasContext';
+import { useRoutine } from '@/contexts/RoutineContext';
 
 export type MessageRole = 'user' | 'copilot';
 
@@ -124,6 +125,8 @@ const dailyAdviceBank: DailyAdvice[] = [
 export const useAICopilot = () => {
   const { goals } = useGoals();
   const { currentStreak } = useMVD();
+  const { lifeAreas } = useLifeAreas();
+  const { routineItems } = useRoutine();
 
   const [messages, setMessages] = useState<CopilotMessage[]>(() => {
     try {
@@ -138,12 +141,10 @@ export const useAICopilot = () => {
 
   const [isThinking, setIsThinking] = useState(false);
 
-  // Persist
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
-  // Context computed from real data
   const context = useMemo(() => {
     const active = goals.filter(g => g.status === 'active');
     const avgProgress = active.length > 0
@@ -153,9 +154,10 @@ export const useAICopilot = () => {
       avgGoalProgress: avgProgress,
       mvdStreak: currentStreak,
       activeGoalsCount: active.length,
-      topArea: mockLifeAreas[0]?.name,
+      topArea: lifeAreas[0]?.name,
     };
-  }, [goals, currentStreak]);
+  }, [goals, currentStreak, lifeAreas]);
+
 
   // Greeting on first load
   useEffect(() => {
@@ -222,7 +224,7 @@ export const useAICopilot = () => {
     const avg = context.avgGoalProgress;
     const topGoals = [...active].sort((a, b) => b.progress - a.progress).slice(0, 2);
     const lagGoals = [...active].sort((a, b) => a.progress - b.progress).slice(0, 2);
-    const topHabits = mockRoutineItems.filter(h => h.isActive).slice(0, 2);
+    const topHabits = routineItems.filter(h => h.isActive).slice(0, 2);
 
     const performanceScore = Math.min(100, Math.round(avg * 0.6 + Math.min(currentStreak, 30) * 1.3));
 
@@ -263,7 +265,7 @@ export const useAICopilot = () => {
       mentorMessage,
       performanceScore,
     };
-  }, [goals, currentStreak, context.avgGoalProgress]);
+  }, [goals, currentStreak, context.avgGoalProgress, routineItems]);
 
   const suggestedPrompts = useMemo(() => [
     'Como estou indo nas minhas metas?',

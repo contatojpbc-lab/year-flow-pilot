@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useGoals } from '@/contexts/GoalsContext';
-import { mockLifeAreas } from '@/data/mockData';
+import { useLifeAreas } from '@/contexts/LifeAreasContext';
 
 export type RoadmapStatus = 'completed' | 'in_progress' | 'planned' | 'at_risk';
 
@@ -159,9 +159,16 @@ const generateMilestones = (currentYear: number): RoadmapMilestone[] => {
 
 export const useLifeRoadmap = () => {
   const { goals } = useGoals();
+  const { lifeAreas } = useLifeAreas();
   const currentYear = new Date().getFullYear();
 
-  // Persist user-modified milestones (e.g., progress overrides)
+  // Map template keys (area-1..5) to user's real life areas by index
+  const templateToAreaId = useMemo(() => {
+    const map = new Map<string, string>();
+    lifeAreas.slice(0, 5).forEach((a, i) => map.set(`area-${i + 1}`, a.id));
+    return map;
+  }, [lifeAreas]);
+
   const [overrides, setOverrides] = useState<Record<string, Partial<RoadmapMilestone>>>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -175,9 +182,17 @@ export const useLifeRoadmap = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
   }, [overrides]);
 
-  const baseMilestones = useMemo(() => generateMilestones(currentYear), [currentYear]);
+  const baseMilestones = useMemo(() => {
+    // Remap template area-N keys to real life area IDs
+    return generateMilestones(currentYear)
+      .map(m => {
+        const realId = templateToAreaId.get(m.areaId);
+        if (!realId) return null;
+        return { ...m, id: m.id.replace(m.areaId, realId), areaId: realId };
+      })
+      .filter((m): m is RoadmapMilestone => m !== null);
+  }, [currentYear, templateToAreaId]);
 
-  // Auto-update current year milestones based on real goals progress
   const milestones = useMemo<RoadmapMilestone[]>(() => {
     const activeGoalsByArea = new Map<string, number[]>();
     goals.filter(g => g.status === 'active').forEach(g => {
@@ -189,13 +204,10 @@ export const useLifeRoadmap = () => {
     return baseMilestones.map(m => {
       const override = overrides[m.id];
       if (override) return { ...m, ...override };
-
-      // Auto-sync current year with real goals
       if (m.year === currentYear) {
         const areaProgresses = activeGoalsByArea.get(m.areaId);
         if (areaProgresses && areaProgresses.length > 0) {
           const avg = Math.round(areaProgresses.reduce((s, p) => s + p, 0) / areaProgresses.length);
-          // Blend baseline projection with real progress (60/40 in favor of real data)
           const blended = Math.round(avg * 0.6 + m.progress * 0.4);
           let status: RoadmapStatus = 'in_progress';
           if (blended >= 95) status = 'completed';
@@ -207,10 +219,10 @@ export const useLifeRoadmap = () => {
     });
   }, [baseMilestones, overrides, goals, currentYear]);
 
-  // Group by area-year
   const areaYearlyPlans = useMemo<AreaYearlyPlan[]>(() => {
     const plans: AreaYearlyPlan[] = [];
-    mockLifeAreas.forEach(area => {
+    lifeAreas.forEach((area, idx) => {
+      const templateKey = `area-${idx + 1}`;
       ROADMAP_YEARS.forEach(year => {
         const yearMilestones = milestones.filter(m => m.areaId === area.id && m.year === year);
         if (yearMilestones.length === 0) return;
@@ -225,7 +237,7 @@ export const useLifeRoadmap = () => {
         plans.push({
           areaId: area.id,
           year,
-          vision: visionMatrix[area.id]?.[year] || '',
+          vision: visionMatrix[templateKey]?.[year] || '',
           milestones: yearMilestones,
           averageProgress: avgProgress,
           status,
@@ -233,9 +245,8 @@ export const useLifeRoadmap = () => {
       });
     });
     return plans;
-  }, [milestones, currentYear]);
+  }, [milestones, currentYear, lifeAreas]);
 
-  // Yearly snapshots (historical view)
   const yearlySnapshots = useMemo<YearlySnapshot[]>(() => {
     return ROADMAP_YEARS.map(year => {
       const yearMs = milestones.filter(m => m.year === year);
@@ -255,7 +266,7 @@ export const useLifeRoadmap = () => {
       let laggingArea: YearlySnapshot['laggingArea'] = null;
       byArea.forEach((progresses, areaId) => {
         const avg = progresses.reduce((s, p) => s + p, 0) / progresses.length;
-        const area = mockLifeAreas.find(a => a.id === areaId);
+        const area = lifeAreas.find(a => a.id === areaId);
         if (!area) return;
         if (!topArea || avg > topArea.progress) topArea = { id: areaId, name: area.name, progress: Math.round(avg) };
         if (!laggingArea || avg < laggingArea.progress) laggingArea = { id: areaId, name: area.name, progress: Math.round(avg) };
@@ -272,7 +283,7 @@ export const useLifeRoadmap = () => {
         isCurrent: year === currentYear,
       };
     });
-  }, [milestones, currentYear]);
+  }, [milestones, currentYear, lifeAreas]);
 
   const updateMilestoneProgress = useCallback((id: string, progress: number) => {
     const clamped = Math.min(100, Math.max(0, progress));
@@ -286,13 +297,12 @@ export const useLifeRoadmap = () => {
     setOverrides({});
   }, []);
 
-  // Auto-recalculation insight
   const lastAutoUpdate = useMemo(() => new Date(), [milestones]);
 
   return {
     years: ROADMAP_YEARS,
     currentYear,
-    areas: mockLifeAreas,
+    areas: lifeAreas,
     milestones,
     areaYearlyPlans,
     yearlySnapshots,

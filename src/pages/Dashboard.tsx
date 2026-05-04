@@ -21,6 +21,7 @@ import { useMVD } from "@/contexts/MVDContext";
 import { useLifeAreas } from "@/contexts/LifeAreasContext";
 import { useFinances } from "@/contexts/FinancesContext";
  import { useExecutionMode } from "@/contexts/ExecutionModeContext";
+ import { useWeeklyReview } from "@/contexts/WeeklyReviewContext";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
@@ -29,8 +30,9 @@ const Dashboard = () => {
   const { lifeAreas } = useLifeAreas();
   const { plan } = useFinances();
    const { isLightMode } = useExecutionMode();
-  const completedGoalsCount = goals.filter(g => g.status === 'completed').length;
+  const { savedReviews } = useWeeklyReview();
   const activeGoalsCount = goals.filter(g => g.status === 'active').length;
+  const completedGoalsCount = goals.filter(g => g.status === 'completed').length;
   const [showCelebration, setShowCelebration] = useState(false);
 
   // Calculate average progress from context goals
@@ -120,10 +122,10 @@ const Dashboard = () => {
          <>
            {/* Stats Grid */}
            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
+         <StatCard
           title="Active Goals"
-          value={stats.activeGoals}
-          subtitle={`${stats.completedGoals} completed this year`}
+          value={activeGoalsCount}
+          subtitle={`${completedGoalsCount} completed this year`}
           icon={Target}
           variant="glow"
         />
@@ -138,7 +140,7 @@ const Dashboard = () => {
         />
         <StatCard
           title="Weekly Reviews"
-          value={stats.weeklyReviewsDone}
+          value={savedReviews.length}
           subtitle="reviews completed"
           icon={Calendar}
         />

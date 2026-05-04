@@ -23,7 +23,7 @@ import { LifeSimulatorPanel } from "@/components/review/LifeSimulatorPanel";
 import { AICopilotPanel } from "@/components/review/AICopilotPanel";
 import { LifeRoadmapPanel } from "@/components/review/LifeRoadmapPanel";
 import { HistoryInsightsCard } from "@/components/history/HistoryComponents";
-import { mockWeeklyReviews } from "@/data/mockData";
+
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
