@@ -1,19 +1,50 @@
-import { User, Palette, Bell, Database, LogOut } from "lucide-react";
+import { useState } from "react";
+import { User, Palette, Bell, Database, LogOut, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useLifeAreas } from "@/contexts/LifeAreasContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Settings = () => {
   const { user, profile, signOut } = useAuth();
-  const { lifeAreas } = useLifeAreas();
+  const { lifeAreas, refresh: refreshAreas } = useLifeAreas();
   const navigate = useNavigate();
+  const [clearing, setClearing] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth", { replace: true });
+  };
+
+  const handleClearSampleData = async () => {
+    if (!user) return;
+    setClearing(true);
+    const tables = [
+      "goal_contributions", "milestones", "habit_entries", "mvd_check_ins",
+      "transactions", "journal_entries", "reminders", "weekly_reviews",
+      "monthly_snapshots", "goals", "routine_items", "mvd_items",
+      "expense_categories", "financial_plans", "financial_goals", "life_areas",
+    ] as const;
+    try {
+      for (const t of tables) {
+        await supabase.from(t).delete().eq("user_id", user.id);
+      }
+      await refreshAreas();
+      toast.success("Dados de exemplo removidos. Comece do zero quando quiser.");
+    } catch {
+      toast.error("Não foi possível limpar os dados agora. Tente novamente.");
+    } finally {
+      setClearing(false);
+    }
   };
 
   const displayName = profile?.display_name || user?.email?.split("@")[0] || "Usuário";
