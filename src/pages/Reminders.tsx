@@ -84,8 +84,8 @@ const Reminders = () => {
           <Card className="border-dashed">
             <CardContent className="p-12 text-center">
               <Bell className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm font-medium text-foreground mb-1">No reminders yet</p>
-              <p className="text-xs text-muted-foreground">Create your first reminder to stay on track</p>
+              <p className="text-sm font-medium text-foreground mb-1">Nenhum lembrete ainda</p>
+              <p className="text-xs text-muted-foreground">Crie seu primeiro lembrete para não perder nada importante</p>
             </CardContent>
           </Card>
         )}
