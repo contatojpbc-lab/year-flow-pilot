@@ -55,8 +55,8 @@ const Settings = () => {
     <div className="space-y-6 animate-fade-in max-w-3xl">
       {/* Header */}
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">Manage your preferences and account</p>
+        <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
+        <p className="text-muted-foreground">Gerencie sua conta e preferências</p>
       </div>
 
       {/* Profile */}
@@ -64,9 +64,9 @@ const Settings = () => {
         <CardHeader>
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">Profile</CardTitle>
+            <CardTitle className="text-base">Perfil</CardTitle>
           </div>
-          <CardDescription>Your personal information</CardDescription>
+          <CardDescription>Suas informações pessoais</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
@@ -78,7 +78,7 @@ const Settings = () => {
               <p className="text-sm text-muted-foreground">{email}</p>
             </div>
           </div>
-          <Button variant="outline" size="sm">Edit Profile</Button>
+          <Button variant="outline" size="sm">Editar perfil</Button>
         </CardContent>
       </Card>
 
@@ -87,9 +87,9 @@ const Settings = () => {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Palette className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">Life Areas</CardTitle>
+            <CardTitle className="text-base">Áreas da Vida</CardTitle>
           </div>
-          <CardDescription>Customize your life areas for goal tracking</CardDescription>
+          <CardDescription>Personalize as áreas usadas no acompanhamento de metas</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -105,12 +105,12 @@ const Settings = () => {
                   />
                   <span className="text-sm font-medium text-foreground">{area.name}</span>
                 </div>
-                <Button variant="ghost" size="sm">Edit</Button>
+                <Button variant="ghost" size="sm">Editar</Button>
               </div>
             ))}
           </div>
           <Button variant="outline" size="sm" className="mt-4">
-            Add Life Area
+            Adicionar área
           </Button>
         </CardContent>
       </Card>
@@ -120,29 +120,29 @@ const Settings = () => {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Bell className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">Notifications</CardTitle>
+            <CardTitle className="text-base">Notificações</CardTitle>
           </div>
-          <CardDescription>Configure how you receive notifications</CardDescription>
+          <CardDescription>Configure como você recebe lembretes</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-foreground">Push Notifications</p>
-              <p className="text-xs text-muted-foreground">Receive notifications in browser</p>
+              <p className="text-sm font-medium text-foreground">Notificações no navegador</p>
+              <p className="text-xs text-muted-foreground">Receba avisos diretamente no navegador</p>
             </div>
             <Switch defaultChecked />
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-foreground">Email Reminders</p>
-              <p className="text-xs text-muted-foreground">Daily summary and reminders</p>
+              <p className="text-sm font-medium text-foreground">Lembretes por email</p>
+              <p className="text-xs text-muted-foreground">Resumo diário e lembretes</p>
             </div>
             <Switch />
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-foreground">Weekly Review Reminder</p>
-              <p className="text-xs text-muted-foreground">Reminder to complete weekly review</p>
+              <p className="text-sm font-medium text-foreground">Lembrete da revisão semanal</p>
+              <p className="text-xs text-muted-foreground">Aviso para completar sua revisão da semana</p>
             </div>
             <Switch defaultChecked />
           </div>
@@ -154,15 +154,36 @@ const Settings = () => {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Database className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">Data & Privacy</CardTitle>
+            <CardTitle className="text-base">Dados e privacidade</CardTitle>
           </div>
-          <CardDescription>Manage your data and privacy settings</CardDescription>
+          <CardDescription>Seus dados ficam isolados na sua conta</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Button variant="outline" size="sm">Export All Data</Button>
-          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-            Delete All Data
-          </Button>
+        <CardContent className="space-y-3">
+          <Button variant="outline" size="sm">Exportar meus dados</Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Limpar dados de exemplo
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Limpar todos os dados?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Isso vai apagar metas, hábitos, finanças, diário e demais registros desta conta.
+                  Use para começar do zero. Essa ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={clearing}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearSampleData} disabled={clearing}>
+                  {clearing ? "Limpando..." : "Sim, limpar tudo"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
 
@@ -171,7 +192,7 @@ const Settings = () => {
         <CardContent className="p-4">
           <Button onClick={handleSignOut} variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
             <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
+            Sair da conta
           </Button>
         </CardContent>
       </Card>
