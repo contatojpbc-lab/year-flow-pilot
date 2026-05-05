@@ -18,11 +18,11 @@ export function GoalsOverview({ goals, lifeAreas }: GoalsOverviewProps) {
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <Target className="h-4 w-4 text-primary" />
-          Active Goals
+          Metas ativas
         </CardTitle>
         <Button variant="ghost" size="sm" asChild>
           <Link to="/goals" className="text-xs text-muted-foreground hover:text-foreground">
-            View all <ChevronRight className="h-3 w-3 ml-1" />
+            Ver todas <ChevronRight className="h-3 w-3 ml-1" />
           </Link>
         </Button>
       </CardHeader>
@@ -30,9 +30,9 @@ export function GoalsOverview({ goals, lifeAreas }: GoalsOverviewProps) {
         {goals.length === 0 ? (
           <div className="text-center py-8">
             <Target className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">No active goals yet</p>
+            <p className="text-sm text-muted-foreground">Nenhuma meta ativa ainda</p>
             <Button variant="outline" size="sm" className="mt-3" asChild>
-              <Link to="/goals">Create your first goal</Link>
+              <Link to="/goals">Criar minha primeira meta</Link>
             </Button>
           </div>
         ) : (

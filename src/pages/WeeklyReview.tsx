@@ -545,9 +545,9 @@ const WeeklyReview = () => {
               <Card className="border-dashed">
                 <CardContent className="p-12 text-center">
                   <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-foreground mb-1">No reviews yet</p>
+                  <p className="text-sm font-medium text-foreground mb-1">Nenhuma revisão ainda</p>
                   <p className="text-xs text-muted-foreground">
-                    Complete your first weekly review to see it here
+                    Complete sua primeira revisão semanal para vê-la aqui
                   </p>
                 </CardContent>
               </Card>

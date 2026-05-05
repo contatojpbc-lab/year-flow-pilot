@@ -1,11 +1,32 @@
+import { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!user) return;
+    const done = localStorage.getItem(`onboarding_done_${user.id}`);
+    if (!done && location.pathname !== "/onboarding") {
+      navigate("/onboarding", { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
+
+  const today = new Date().toLocaleDateString("pt-BR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -15,7 +36,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
             <div className="flex-1" />
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">January 21, 2026</span>
+              <span className="text-sm text-muted-foreground capitalize">{today}</span>
             </div>
           </header>
           <div className="flex-1 p-6 overflow-auto">
