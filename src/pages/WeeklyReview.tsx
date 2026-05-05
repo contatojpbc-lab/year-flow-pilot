@@ -41,8 +41,7 @@ const WeeklyReview = () => {
     setIsReviewMode,
   } = useWeeklyReview();
 
-  // Combine saved reviews with mock data
-  const allReviews = [...savedReviews, ...mockWeeklyReviews];
+  const allReviews = savedReviews;
 
   const formatDateRange = (start: Date, end: Date) => {
     const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
