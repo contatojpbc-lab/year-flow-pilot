@@ -50,7 +50,7 @@ const Auth = () => {
     const { error } = await supabase.auth.signInWithPassword({ email: siEmail, password: siPassword });
     setBusy(false);
     if (error) {
-      const msg = error.message.toLowerCase().includes("invalid") ? "Email ou senha incorretos" : error.message;
+      const msg = error.message.toLowerCase().includes("invalid") ? "Email ou senha incorretos." : "Não foi possível entrar agora. Tente novamente.";
       toast({ title: "Erro ao entrar", description: msg, variant: "destructive" });
       return;
     }
