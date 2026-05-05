@@ -70,24 +70,25 @@ const Auth = () => {
       }
     }
     setBusy(true);
-    const { error } = await supabase.auth.signUp({
+    const { error, data } = await supabase.auth.signUp({
       email: suEmail,
       password: suPassword,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${window.location.origin}/onboarding`,
         data: { display_name: suName },
       },
     });
     setBusy(false);
     if (error) {
-      const msg = error.message.toLowerCase().includes("registered")
+      const msg = error.message.toLowerCase().includes("registered") || error.message.toLowerCase().includes("already")
         ? "Este email já está cadastrado. Tente entrar."
-        : error.message;
+        : "Não foi possível criar a conta. Verifique os dados e tente novamente.";
       toast({ title: "Erro no cadastro", description: msg, variant: "destructive" });
       return;
     }
-    toast({ title: "Conta criada", description: "Bem-vindo ao Life OS!" });
-    navigate("/", { replace: true });
+    toast({ title: "Conta criada", description: "Vamos te mostrar como começar." });
+    if (data.session) navigate("/onboarding", { replace: true });
+    else navigate("/", { replace: true });
   };
 
   const handleGoogle = async () => {
@@ -97,10 +98,10 @@ const Auth = () => {
     });
     if (result.error) {
       setBusy(false);
-      toast({ title: "Erro com Google", description: String(result.error), variant: "destructive" });
+      toast({ title: "Erro com Google", description: "Não foi possível entrar com o Google. Tente novamente.", variant: "destructive" });
       return;
     }
-    if (result.redirected) return; // browser redirecting
+    if (result.redirected) return;
     navigate("/", { replace: true });
   };
 
@@ -113,7 +114,7 @@ const Auth = () => {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: "Erro", description: "Não foi possível enviar o link. Tente novamente em instantes.", variant: "destructive" });
       return;
     }
     toast({ title: "Verifique seu email", description: "Enviamos um link para redefinir sua senha." });
