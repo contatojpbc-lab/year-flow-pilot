@@ -15,7 +15,7 @@ const features = [
 
 const Landing = () => {
   const { user, loading } = useAuth();
-  if (!loading && user) return <Navigate to="/app" replace />;
+  if (!loading && user) return <Navigate to="/" replace />;
 
   return (
     <div className="min-h-screen bg-background">

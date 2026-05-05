@@ -35,7 +35,7 @@ const Onboarding = () => {
 
   const finish = () => {
     if (user) localStorage.setItem(`onboarding_done_${user.id}`, "1");
-    navigate("/app", { replace: true });
+    navigate("/", { replace: true });
   };
 
   const isLast = step === steps.length - 1;
