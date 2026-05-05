@@ -194,8 +194,8 @@ const Auth = () => {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          Ao entrar você concorda em ter seus dados isolados por usuário.{" "}
-          <Link to="/" className="underline hover:text-foreground">Voltar</Link>
+          Seus dados ficam privados na sua conta.{" "}
+          <Link to="/landing" className="underline hover:text-foreground">Saiba mais</Link>
         </p>
       </div>
     </div>
