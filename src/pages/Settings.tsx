@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useLifeAreas } from "@/contexts/LifeAreasContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -17,6 +19,7 @@ import { toast } from "sonner";
 const Settings = () => {
   const { user, profile, signOut } = useAuth();
   const { lifeAreas, refresh: refreshAreas } = useLifeAreas();
+  const { status, trialEndsAt } = useSubscription();
   const navigate = useNavigate();
   const [clearing, setClearing] = useState(false);
 
@@ -79,6 +82,38 @@ const Settings = () => {
             </div>
           </div>
           <Button variant="outline" size="sm">Editar perfil</Button>
+        </CardContent>
+      </Card>
+
+      {/* Subscription */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Assinatura</CardTitle>
+          </div>
+          <CardDescription>
+            {status === "expired"
+              ? "Seu período gratuito terminou"
+              : status === "active"
+              ? "Sua assinatura está ativa"
+              : "Você está no período de teste gratuito"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {trialEndsAt && status !== "active" && (
+            <p className="text-sm text-muted-foreground">
+              {status === "expired" ? "Seu teste terminou em: " : "Seu teste gratuito termina em: "}
+              <span className="font-medium text-foreground">
+                {trialEndsAt.toLocaleDateString("pt-BR")}
+              </span>
+            </p>
+          )}
+          {status === "expired" && (
+            <Button size="sm" onClick={() => toast.info("Assinatura em breve. Estamos preparando os planos.")}>
+              Assinar
+            </Button>
+          )}
         </CardContent>
       </Card>
 
