@@ -683,6 +683,33 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -835,6 +862,7 @@ export type Database = {
       goal_status: "planned" | "active" | "completed" | "paused"
       reminder_frequency: "once" | "daily" | "weekly" | "monthly"
       reminder_type: "goal" | "routine" | "review" | "custom"
+      subscription_status: "trial" | "active" | "expired"
       time_of_day: "morning" | "afternoon" | "evening" | "anytime"
       transaction_type: "income" | "expense"
     }
@@ -970,6 +998,7 @@ export const Constants = {
       goal_status: ["planned", "active", "completed", "paused"],
       reminder_frequency: ["once", "daily", "weekly", "monthly"],
       reminder_type: ["goal", "routine", "review", "custom"],
+      subscription_status: ["trial", "active", "expired"],
       time_of_day: ["morning", "afternoon", "evening", "anytime"],
       transaction_type: ["income", "expense"],
     },
