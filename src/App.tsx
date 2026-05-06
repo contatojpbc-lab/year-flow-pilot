@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import Paywall from "./pages/Paywall";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { LifeAreasProvider } from "@/contexts/LifeAreasContext";
 import { GoalsProvider } from "@/contexts/GoalsContext";
