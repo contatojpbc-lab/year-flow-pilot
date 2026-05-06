@@ -19,6 +19,7 @@ import { toast } from "sonner";
 const Settings = () => {
   const { user, profile, signOut } = useAuth();
   const { lifeAreas, refresh: refreshAreas } = useLifeAreas();
+  const { status, trialEndsAt } = useSubscription();
   const navigate = useNavigate();
   const [clearing, setClearing] = useState(false);
 
