@@ -86,7 +86,7 @@ const Settings = () => {
       </Card>
 
       {/* Subscription */}
-      <Card>
+      <Card className={status === "expired" ? "border-destructive/50" : ""}>
         <CardHeader>
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -94,24 +94,29 @@ const Settings = () => {
           </div>
           <CardDescription>
             {status === "expired"
-              ? "Seu período gratuito terminou"
+              ? "Seu acesso expirou"
               : status === "active"
               ? "Sua assinatura está ativa"
               : "Você está no período de teste gratuito"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {trialEndsAt && status !== "active" && (
+          {status === "expired" && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              Seu acesso expirou. Ative sua assinatura para voltar a usar o sistema.
+            </div>
+          )}
+          {trialEndsAt && status === "trial" && (
             <p className="text-sm text-muted-foreground">
-              {status === "expired" ? "Seu teste terminou em: " : "Seu teste gratuito termina em: "}
+              Seu teste termina em{" "}
               <span className="font-medium text-foreground">
                 {trialEndsAt.toLocaleDateString("pt-BR")}
               </span>
             </p>
           )}
           {status === "expired" && (
-            <Button size="sm" onClick={() => toast.info("Assinatura em breve. Estamos preparando os planos.")}>
-              Assinar
+            <Button size="sm" onClick={() => toast.info("Pagamento em breve. Estamos preparando os planos.")}>
+              Assinar agora
             </Button>
           )}
         </CardContent>
