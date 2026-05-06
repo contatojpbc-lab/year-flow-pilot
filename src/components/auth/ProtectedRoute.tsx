@@ -1,35 +1,16 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
-import Paywall from "@/pages/Paywall";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
-function SubscriptionGate({ children }: { children: ReactNode }) {
-  const { status, loading } = useSubscription();
-  const location = useLocation();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">Carregando...</div>
-      </div>
-    );
-  }
-
-  // Allow Settings access even when expired so user can manage account
-  const allowedWhenExpired = ["/settings"];
-  if (status === "expired" && !allowedWhenExpired.includes(location.pathname)) {
-    return <Paywall />;
-  }
-
-  return <>{children}</>;
-}
+const ALLOWED_WHEN_EXPIRED = ["/settings", "/paywall"];
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { status, loading: subLoading } = useSubscription();
   const location = useLocation();
 
-  if (loading) {
+  if (authLoading || (user && subLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-sm text-muted-foreground">Carregando...</div>
@@ -41,9 +22,9 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/landing" replace state={{ from: location }} />;
   }
 
-  return (
-    <SubscriptionProvider>
-      <SubscriptionGate>{children}</SubscriptionGate>
-    </SubscriptionProvider>
-  );
+  if (status === "expired" && !ALLOWED_WHEN_EXPIRED.includes(location.pathname)) {
+    return <Navigate to="/paywall" replace />;
+  }
+
+  return <>{children}</>;
 }

@@ -1,4 +1,4 @@
-import { Lock, LogOut } from "lucide-react";
+import { Lock, LogOut, Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,20 +22,28 @@ export default function Paywall() {
             <Lock className="h-7 w-7 text-primary" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-foreground">
-              Seu período gratuito terminou
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground">Seu acesso expirou</h1>
             <p className="text-muted-foreground">
-              Para continuar usando o sistema e manter seus dados, ative sua assinatura.
+              Seu teste gratuito de 30 dias terminou. Para continuar usando o sistema
+              e manter seus dados, ative sua assinatura.
             </p>
           </div>
           <div className="space-y-2">
             <Button
               size="lg"
               className="w-full"
-              onClick={() => toast.info("Assinatura em breve. Estamos preparando os planos.")}
+              onClick={() => toast.info("Pagamento em breve. Estamos preparando os planos.")}
             >
-              Assinar agora
+              Ir para pagamento
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full"
+              onClick={() => navigate("/settings")}
+            >
+              <SettingsIcon className="h-4 w-4 mr-2" />
+              Ir para configurações
             </Button>
             <Button variant="ghost" size="sm" className="w-full" onClick={handleSignOut}>
               <LogOut className="h-4 w-4 mr-2" />
