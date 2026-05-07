@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
+import { TrialBanner } from "./TrialBanner";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface AppLayoutProps {
@@ -39,6 +40,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <span className="text-sm text-muted-foreground capitalize">{today}</span>
             </div>
           </header>
+          <TrialBanner />
           <div className="flex-1 p-6 overflow-auto">
             {children}
           </div>
