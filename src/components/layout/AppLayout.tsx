@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { TrialBanner } from "./TrialBanner";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface AppLayoutProps {
@@ -36,7 +37,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
             <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
             <div className="flex-1" />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <LanguageSwitcher />
               <span className="text-sm text-muted-foreground capitalize">{today}</span>
             </div>
           </header>

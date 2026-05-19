@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
- import { Target, Flame, Calendar, TrendingUp, PartyPopper, AlertCircle, Zap } from "lucide-react";
+import { Target, Flame, Calendar, TrendingUp, PartyPopper, AlertCircle, Zap } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ProgressRing } from "@/components/dashboard/ProgressRing";
 import { MVDIndicator } from "@/components/dashboard/MVDIndicator";
@@ -12,43 +12,41 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LifeAreaTrendsCard, HistoryInsightsCard } from "@/components/history/HistoryComponents";
 import { MonthlyReportSummary } from "@/components/reports/MonthlyReportCard";
 import { ConsistencyMetricsCard, MVDCompletionMetricsCard, RoutineGoalsCorrelationCard } from "@/components/history/EvolutionMetrics";
- import { MentalLoadAlert } from "@/components/dashboard/MentalLoadAlert";
- import { SmartRecommendations } from "@/components/dashboard/SmartRecommendations";
- import { ExecutionModeToggle } from "@/components/dashboard/ExecutionModeToggle";
- import { LightModeView } from "@/components/dashboard/LightModeView";
+import { MentalLoadAlert } from "@/components/dashboard/MentalLoadAlert";
+import { SmartRecommendations } from "@/components/dashboard/SmartRecommendations";
+import { ExecutionModeToggle } from "@/components/dashboard/ExecutionModeToggle";
+import { LightModeView } from "@/components/dashboard/LightModeView";
 import { useGoals } from "@/contexts/GoalsContext";
 import { useMVD } from "@/contexts/MVDContext";
 import { useLifeAreas } from "@/contexts/LifeAreasContext";
 import { useFinances } from "@/contexts/FinancesContext";
- import { useExecutionMode } from "@/contexts/ExecutionModeContext";
- import { useWeeklyReview } from "@/contexts/WeeklyReviewContext";
+import { useExecutionMode } from "@/contexts/ExecutionModeContext";
+import { useWeeklyReview } from "@/contexts/WeeklyReviewContext";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { goals } = useGoals();
   const { items, completedItems, allCompleted, currentStreak, longestStreak } = useMVD();
   const { lifeAreas } = useLifeAreas();
   const { plan } = useFinances();
-   const { isLightMode } = useExecutionMode();
+  const { isLightMode } = useExecutionMode();
   const { savedReviews } = useWeeklyReview();
   const activeGoalsCount = goals.filter(g => g.status === 'active').length;
   const completedGoalsCount = goals.filter(g => g.status === 'completed').length;
   const [showCelebration, setShowCelebration] = useState(false);
 
-  // Calculate average progress from context goals
   const averageProgress = goals.length > 0 
     ? Math.round(goals.reduce((acc, g) => acc + g.progress, 0) / goals.length)
     : 0;
 
-  // Detect stagnant goals (progress < 10% or goals that haven't moved)
   const stagnantGoals = useMemo(() => {
     return goals.filter(goal => goal.progress < 10);
   }, [goals]);
 
-  // Check if MVD hasn't been started today
   const mvdNotStarted = completedItems.length === 0 && items.length > 0;
 
-  // Show celebration when MVD is completed
   useEffect(() => {
     if (allCompleted && completedItems.length > 0) {
       setShowCelebration(true);
@@ -68,9 +66,9 @@ const Dashboard = () => {
                 <PartyPopper className="h-8 w-8 text-success" />
               </div>
               <div className="text-center">
-                <h2 className="text-xl font-bold text-success">MVD Completed!</h2>
+                <h2 className="text-xl font-bold text-success">{t("mvdCompleted")}</h2>
                 <p className="text-sm text-success/80 mt-1">
-                  Streak: {currentStreak} days 🔥
+                  {t("streakDays", { count: currentStreak })}
                 </p>
               </div>
             </div>
@@ -79,127 +77,123 @@ const Dashboard = () => {
       )}
 
       {/* Subtle Alerts Section */}
-       <div className="space-y-2">
-         {/* Mental Load Alert - Priority */}
-         <MentalLoadAlert />
-         
-         {mvdNotStarted && (
-           <Alert className="border-warning/30 bg-warning/5">
-             <AlertCircle className="h-4 w-4 text-warning" />
-             <AlertDescription className="text-sm text-warning">
-               Seu MVD ainda não foi iniciado hoje. Comece com o primeiro item!
-             </AlertDescription>
-           </Alert>
-         )}
-         {stagnantGoals.length > 0 && (
-           <Alert className="border-muted-foreground/30 bg-muted/30">
-             <AlertCircle className="h-4 w-4 text-muted-foreground" />
-             <AlertDescription className="text-sm text-muted-foreground">
-               {stagnantGoals.length === 1 
-                 ? `A meta "${stagnantGoals[0].title}" precisa de atenção (${stagnantGoals[0].progress}% de progresso).`
-                 : `${stagnantGoals.length} metas precisam de atenção (menos de 10% de progresso).`
-               }
-             </AlertDescription>
-           </Alert>
-         )}
-       </div>
+      <div className="space-y-2">
+        <MentalLoadAlert />
+
+        {mvdNotStarted && (
+          <Alert className="border-warning/30 bg-warning/5">
+            <AlertCircle className="h-4 w-4 text-warning" />
+            <AlertDescription className="text-sm text-warning">
+              {t("mvdNotStarted")}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {stagnantGoals.length > 0 && (
+          <Alert className="border-muted-foreground/30 bg-muted/30">
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <AlertDescription className="text-sm text-muted-foreground">
+              {stagnantGoals.length === 1
+                ? t("stagnantGoalSingle", {
+                    title: stagnantGoals[0].title,
+                    progress: stagnantGoals[0].progress,
+                  })
+                : t("stagnantGoalsMultiple", { count: stagnantGoals.length })}
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
 
       {/* Header */}
       <div className="space-y-1">
-         <div className="flex items-center justify-between">
-           <div>
-             <h1 className="text-2xl font-bold text-foreground">Good morning!</h1>
-             <p className="text-muted-foreground">Here's your Life OS overview for today.</p>
-           </div>
-           <ExecutionModeToggle />
-         </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{t("goodMorning")}</h1>
+            <p className="text-muted-foreground">{t("dashboardSubtitle")}</p>
+          </div>
+          <ExecutionModeToggle />
+        </div>
       </div>
 
-       {/* Light Mode View - Replaces normal dashboard */}
-       {isLightMode ? (
-         <LightModeView />
-       ) : (
-         <>
-           {/* Stats Grid */}
-           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-         <StatCard
-          title="Active Goals"
-          value={activeGoalsCount}
-          subtitle={`${completedGoalsCount} completed this year`}
-          icon={Target}
-          variant="glow"
-        />
-        <StatCard
-          title="Current Streak"
-          value={`${currentStreak} days`}
-          subtitle={`Longest: ${longestStreak} days`}
-          icon={Flame}
-          trend={currentStreak > 0 ? "up" : undefined}
-          trendValue={currentStreak > 0 ? `+${currentStreak}` : undefined}
-          className={cn(allCompleted && "ring-2 ring-success/50")}
-        />
-        <StatCard
-          title="Weekly Reviews"
-          value={savedReviews.length}
-          subtitle="reviews completed"
-          icon={Calendar}
-        />
-        <StatCard
-          title="Goals Progress"
-          value={`${averageProgress}%`}
-          subtitle="average completion"
-          icon={TrendingUp}
-          trend="up"
-          trendValue="+5%"
-        />
-           </div>
+      {/* Light Mode View */}
+      {isLightMode ? (
+        <LightModeView />
+      ) : (
+        <>
+          {/* Stats Grid */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title={t("activeGoals")}
+              value={activeGoalsCount}
+              subtitle={t("completedThisYear", { count: completedGoalsCount })}
+              icon={Target}
+              variant="glow"
+            />
+            <StatCard
+              title={t("currentStreak")}
+              value={`${currentStreak} days`}
+              subtitle={t("longestDays", { count: longestStreak })}
+              icon={Flame}
+              trend={currentStreak > 0 ? "up" : undefined}
+              trendValue={currentStreak > 0 ? `+${currentStreak}` : undefined}
+              className={cn(allCompleted && "ring-2 ring-success/50")}
+            />
+            <StatCard
+              title={t("weeklyReviews")}
+              value={savedReviews.length}
+              subtitle={t("reviewsCompleted")}
+              icon={Calendar}
+            />
+            <StatCard
+              title={t("goalsProgress")}
+              value={`${averageProgress}%`}
+              subtitle={t("averageCompletion")}
+              icon={TrendingUp}
+              trend="up"
+              trendValue="+5%"
+            />
+          </div>
 
-           {/* Main Content Grid */}
-           <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left Column - Progress, MVD & Priorities */}
-        <div className="space-y-6">
-          {/* Overall Progress */}
-          <Card className="animate-slide-up">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">2026 Progress</CardTitle>
-            </CardHeader>
-            <CardContent className="flex justify-center py-4">
-              <ProgressRing 
-                progress={averageProgress} 
-                label="Complete"
-                sublabel="across all goals"
-              />
-            </CardContent>
-          </Card>
+          {/* Main Content Grid */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Left Column */}
+            <div className="space-y-6">
+              <Card className="animate-slide-up">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold">
+                    {t("yearProgress", { year: 2026 })}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center py-4">
+                  <ProgressRing
+                    progress={averageProgress}
+                    label={t("complete")}
+                    sublabel={t("acrossAllGoals")}
+                  />
+                </CardContent>
+              </Card>
 
-          {/* MVD Indicator */}
-          <MVDIndicator 
-            items={items} 
-            completedItems={completedItems}
-          />
-          
-          {/* Consistency Metrics */}
-          <ConsistencyMetricsCard />
-        </div>
+              <MVDIndicator items={items} completedItems={completedItems} />
+              <ConsistencyMetricsCard />
+            </div>
 
-        {/* Center Column - Daily Priorities & Goals */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Daily Priorities - Main Focus */}
-          <DailyPriorities />
-           <SmartRecommendations />
-          <GoalsOverview goals={goals} lifeAreas={lifeAreas} />
-        </div>
+            {/* Center Column */}
+            <div className="lg:col-span-1 space-y-6">
+              <DailyPriorities />
+              <SmartRecommendations />
+              <GoalsOverview goals={goals} lifeAreas={lifeAreas} />
+            </div>
 
-        {/* Right Column - Finances, Trends & Insights */}
-        <div className="space-y-6">
-          <FinanceSnapshot plan={plan} />
-          <LifeAreaTrendsCard />
-           <RoutineGoalsCorrelationCard />
-          <HistoryInsightsCard maxInsights={3} />
-        </div>
-           </div>
-         </>
-       )}
+            {/* Right Column */}
+            <div className="space-y-6">
+              <FinanceSnapshot plan={plan} />
+              <LifeAreaTrendsCard />
+              <RoutineGoalsCorrelationCard />
+              <HistoryInsightsCard maxInsights={3} />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
